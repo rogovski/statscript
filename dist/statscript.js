@@ -105,7 +105,17 @@ return /******/ (function(modules) { // webpackBootstrap
 	  ss.tuple = __webpack_require__(3);
 
 	  ss.random = {};
-	  ss.random.normal = __webpack_require__(4);
+	  ss.random.uniform = __webpack_require__(4);
+	  ss.random.normal = __webpack_require__(5);
+
+	  ss.numeric = {};
+	  ss.numeric.constants = __webpack_require__(6);
+	  ss.numeric.error = __webpack_require__(7);
+	  ss.numeric.kbn = __webpack_require__(8);
+	  ss.numeric.root = __webpack_require__(9);
+
+	  ss.distribution = {};
+	  ss.distribution.normal = __webpack_require__(10);
 
 	  // return the new instance
 	  return ss;
@@ -127,7 +137,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	(function () {
 	    'use strict';
 
-	    var _ = __webpack_require__(6);
+	    var _ = __webpack_require__(11);
 	    var T = __webpack_require__(3);
 
 	    function _foldL (fn, seed, ls) {
@@ -240,25 +250,45 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	    'use strict';
 
+	    function _uniform_Float () {
+	        return Math.random(0,1);
+	    }
+	    exports.uniform_Float = _uniform_Float;
+
+
+	    function _uniformR_Float (min,max) {
+	        return Math.random(min,max);
+	    }
+	    exports.uniformR_Float = _uniformR_Float;
+
+
+	    function _uniform_Word32 () {
+	        // 2147483647 is the highest integer in 32 bits
+	        return Math.floor(Math.random(0,1) * 2147483647);
+	    }
+	    exports.uniform_Word32 = _uniform_Word32;
+
+
+	}).call(this);
+
+
+/***/ },
+/* 5 */
+/***/ function(module, exports, __webpack_require__) {
+
+	(function () {
+
+	    'use strict';
+
 	    var _ss     = __webpack_require__(2),
-	        _       = __webpack_require__(6),
-	        uniform = __webpack_require__(5),
+	        _       = __webpack_require__(11),
+	        uniform = __webpack_require__(4),
 	        T       = __webpack_require__(3);
 
 
 	    var rNorm = 3.442619855899,
 	        blocks_v = 0.00991256303526217,
 	        blocks_f = Math.exp(-0.5 * rNorm * rNorm);
-
-	/*
-	    function _blocksUnfoldHelper (s) {
-	        var b = s.fst,
-	            g = s.snd,
-	            h = Math.sqrt( -2 * Math.log( (blocks_v / b) + g ) ),
-	            u = new T.Tuple(h, Math.exp( -0.5 * h * h ) );
-
-	        return new T.Tuple( h, u );
-	    } */
 
 
 	    var _blocks_ls = (function () {
@@ -326,37 +356,323 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 5 */
+/* 6 */
 /***/ function(module, exports, __webpack_require__) {
 
 	(function () {
 
 	    'use strict';
 
-	    function _uniform_Float () {
-	        return Math.random(0,1);
-	    }
-	    exports.uniform_Float = _uniform_Float;
+
+	    exports.sqrt_2 = 1.4142135623730950488016887242096980785696718753769480731766;
 
 
-	    function _uniformR_Float (min,max) {
-	        return Math.random(min,max);
-	    }
-	    exports.uniformR_Float = _uniformR_Float;
+	    exports.sqrt_2_pi = 2.5066282746310005024157652848110452530069867406099383166299;
 
 
-	    function _uniform_Word32 () {
-	        // 2147483647 is the highest integer in 32 bits
-	        return Math.floor(Math.random(0,1) * 2147483647);
-	    }
-	    exports.uniform_Word32 = _uniform_Word32;
+	    exports.tiny = 2.2250738585072014e-308;
 
 
 	}).call(this);
 
 
 /***/ },
-/* 6 */
+/* 7 */
+/***/ function(module, exports, __webpack_require__) {
+
+	(function () {
+
+	    'use strict';
+
+
+	    // error function.
+	    // taken from http://www.johndcook.com/cpp_erf.html
+	    function _erf(x) {
+	        var a1 =  0.254829592;
+	        var a2 = -0.284496736;
+	        var a3 =  1.421413741;
+	        var a4 = -1.453152027;
+	        var a5 =  1.061405429;
+	        var p  =  0.3275911;
+
+	        // Save the sign of x
+	        var sign = 1;
+	        if (x < 0)
+	            sign = -1;
+
+	        x = Math.abs(x);
+
+	        // A&S formula 7.1.26
+	        var t = 1.0/(1.0 + p*x);
+	        var y = 1.0 - (((((a5*t + a4)*t) + a3)*t + a2)*t + a1)*t*Math.exp(-x*x);
+
+	        return sign*y;
+	    }
+	    exports.erf = _erf;
+
+
+	    function _erfc (x) {
+	        return 1 - _erf(x);
+	    }
+	    exports.erfc = _erfc;
+
+
+	    // mikolalysenko: https://www.npmjs.org/package/almost-equal
+	    function _within (a,b) {
+	        var FLT_EPSILON = 1.19209290e-7,
+	            absoluteError = FLT_EPSILON,
+	            relativeError = FLT_EPSILON,
+	            d = Math.abs(a - b);
+
+	        if(d <= absoluteError) {
+	            return true
+	        }
+	        if(d <= relativeError * Math.min(Math.abs(a), Math.abs(b))) {
+	            return true
+	        }
+	        return a === b
+	    }
+	    exports.within = _within;
+
+
+	}).call(this);
+
+
+/***/ },
+/* 8 */
+/***/ function(module, exports, __webpack_require__) {
+
+	(function () {
+
+	    'use strict';
+
+	    var _ss     = __webpack_require__(2);
+
+
+	    function _Kbn (sum, c) {
+	        this.sum = sum;
+	        this.c = c;
+	    }
+
+
+	    function _kbnAddInternal (kbn_orig, x) {
+	        var c_orig = kbn_orig.c, sum_orig = kbn_orig.sum;
+
+	        var sum2 = sum_orig + c_orig;
+	        var c2 = null;
+
+	        if( Math.abs( sum_orig ) >= Math.abs( x ) )
+	            c2 = c_orig + ( ( sum_orig - sum2 ) + x );
+
+	        else
+	            c2 = c_orig + ( ( x - sum2 ) + sum_orig );
+
+
+	        return new _Kbn( sum2, c2 );
+	    }
+
+
+	    // public api
+
+	    function _zero () {
+	        return new _Kbn(0,0);
+	    }
+	    exports.zero = _zero;
+
+
+	    function _add (kbn, a) {
+
+	        if( !(kbn instanceof _Kbn) ) {
+	            throw new Error(
+	                "statscript.numeric.kbn.add: " +
+	                "kbn parameter is not of type KBN"
+	            );
+	        }
+
+	        return _kbnAddInternal( kbn, a );
+	    }
+	    exports.add = _add;
+
+
+	    function _sum (ls,fn) {
+	        return fn( _ss.foldL( _zero, ls, _add ) );
+	    }
+	    exports.sum = _sum;
+
+
+	    function _unpack (obj) {
+	        return obj.sum + obj.c;
+	    }
+	    exports.unpack = _unpack;
+
+	}).call(this);
+
+
+/***/ },
+/* 9 */
+/***/ function(module, exports, __webpack_require__) {
+
+	(function () {
+
+	    'use strict';
+
+	    var _ss     = __webpack_require__(2),
+	        _       = __webpack_require__(11),
+	        error   = __webpack_require__(7);
+
+
+	    function _RootResult(a) {
+	        this.notBracketed = false;
+	        this.searchFailed = _.isUndefined(a) ? true : false;
+	        this.root = _.isUndefined(a) ? void 0 : a;
+	    }
+
+
+	    function ridders (tolerance,f_main,a,fa,b,fb,i) {
+	        var d    = Math.abs(b - a),
+	            dm   = (b - a) * 0.5,
+	            m   = a + dm,
+	            fm  = f_main(m),
+	            dn  = Math.sign(fb - fa) * dm * fm / Math.sqrt(fm*fm - fa*fb),
+	            n   = m - Math.sign(dn) * Math.min(Math.abs(dn), Math.abs(dm) - 0.5 * tolerance),
+	            fn  = f_main(n);
+
+	        if( error.within( a, b ) ) return new _RootResult(a);
+
+	        else if (fm === 0) return new _RootResult(m);
+
+	        else if (fn === 0) return new _RootResult(n);
+
+	        else if (d < tolerance) return new _RootResult(n);
+
+	        else if (i >= 100) return new _RootResult();
+
+	        else if(n === a || n === b) {
+	            if(fm*fa < 0) return ridders(tolerance,f_main,a,fa,m,fm,(i+1));
+
+	            else return ridders(tolerance,f_main,m,fm,b,fb,(i+1));
+	        }
+
+	        else if(fn*fm < 0) return ridders(tolerance,f_main,n,fn,m,fm,(i+1));
+
+	        else if(fn*fa < 0) return ridders(tolerance,f_main,a,fa,n,fn,(i+1));
+
+	        else return ridders(tolerance,f_main,n,fn,b,fb,(i+1));
+	    }
+
+
+
+	    // @tolerance: absolute error tolerance
+	    // @lowbound: lower bound of search
+	    // @highbound: upper bound of search
+	    // @fn: function to find the roots of
+	    function _root (tolerance, lowbound, highbound, fn) {
+	        var flo = fn(lowbound), fhi = fn(highbound);
+	        if(flo === 0) return new _RootResult(lowbound);
+
+	        else if (fhi === 0) return new _RootResult(highbound);
+
+	        else if (flo * fhi > 0) {
+	            var res = new _RootResult();
+	            res.notBracketed = true;
+	            return res;
+	        }
+	        else return ridders(tolerance, fn, lowbound, flo, highbound, fhi, 0);
+	    }
+	    exports.root = _root;
+
+
+	}).call(this);
+
+
+/***/ },
+/* 10 */
+/***/ function(module, exports, __webpack_require__) {
+
+	(function () {
+
+	    'use strict';
+
+	    var _ss      = __webpack_require__(2),
+	        _        = __webpack_require__(11),
+	        error    = __webpack_require__(7),
+	        constant = __webpack_require__(6);
+
+
+	    function _ND(mean, stdDev) {
+	        if(stdDev <= 0) {
+	            throw new Error(
+	                "Statscript.Distribution.Normal: " +
+	                "standard deviation must be positive"
+	            );
+	        }
+
+	        this.mean = mean;
+	        this.stdDev = stdDev;
+	        this.pdfDenom = Math.log( constant.sqrt_2_pi * stdDev );
+	        this.cdfDenom = constant.sqrt_2 * stdDev;
+	    }
+
+
+	    function _standard () {
+	        return new _ND(0,1);
+	    }
+	    exports.standard = _standard;
+
+
+	    function _normal (mean, stdDev) {
+	        return new _ND(mean, stdDev);
+	    }
+	    exports.normal = _normal;
+
+
+	    function _cdf (distribution, probability) {
+	        if( !(distribution instanceof _ND) ) {
+	            throw new Error(
+	                "statscript.distribution.normal.cdf: " +
+	                "distribution parameter is not Normal"
+	            );
+	        };
+
+	        // if @distribution is the only parameter
+	        // partially apply the cdf function to it
+	        if(_.isUndefined(probability)) {
+	            return function (p) {
+	                return error.erfc((d.mean - p) / d.cdfDenom) / 2;
+	            }
+	        }
+
+	        return error.erfc((d.mean - probability) / d.cdfDenom) / 2;
+	    }
+	    exports.cdf = _cdf;
+
+
+	    function _complCdf (distribution, probability) {
+	        if( !(distribution instanceof _ND) ) {
+	            throw new Error(
+	                "statscript.distribution.normal.complCdf: " +
+	                "distribution parameter is not Normal"
+	            );
+	        };
+
+	        // if @distribution is the only parameter
+	        // partially apply the cdf function to it
+	        if(_.isUndefined(probability)) {
+	            return function (p) {
+	                return error.erfc((p - d.mean) / d.cdfDenom) / 2;
+	            }
+	        }
+
+	        return error.erfc((probability - d.mean) / d.cdfDenom) / 2;
+	    }
+	    exports.complCdf = _complCdf;
+
+
+	}).call(this);
+
+
+/***/ },
+/* 11 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;//     Underscore.js 1.7.0
