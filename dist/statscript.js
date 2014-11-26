@@ -2,7 +2,7 @@
  * statscript.js
  *
  * @version 0.0.0
- * @date    2014-11-25
+ * @date    2014-11-26
  *
  * @license
  * Copyright (C) 2014 Michael Rogowski <michaeljrogowski@gmail.com>
@@ -140,7 +140,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    exports.foldL = _foldL;
 
 
-	    function _unfoldr (generate, seed) {
+	    function _unfoldr (seed, generate) {
 	        var s = seed, accum = [], safety = 35000;
 
 	        while(safety > 0) {
@@ -157,7 +157,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    exports.unfoldr = _unfoldr;
 
 
-	    function _unfoldrN (n, generate, seed) {
+	    function _unfoldrN (n, seed, generate) {
 	        var s = seed, accum = [], safety = 35000, idx = 0;
 
 	        while(idx < n && safety > 0) {
@@ -175,7 +175,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    exports.unfoldrN = _unfoldrN;
 
 
-	    function _zipWith (fn,xs,ys) {
+	    function _zipWith (xs, ys, fn) {
 	        var longerList = xs.length > ys.length ? ys : xs,
 	            accum = [];
 	        for (var i = 0; i < longerList.length; i++) {
@@ -184,6 +184,26 @@ return /******/ (function(modules) { // webpackBootstrap
 	        return accum;
 	    }
 	    exports.zipWith = _zipWith;
+
+
+	    function _replicate(n, a) {
+	        var accum = [];
+	        for (var i = 0; i < n; i++) {
+	            accum.push(a);
+	        };
+	        return accum;
+	    }
+	    exports.replicate = _replicate;
+
+
+	    function _generate(n, fn) {
+	        var accum = [];
+	        for (var i = 0; i < n; i++) {
+	            accum.push(fn(i));
+	        };
+	        return accum;
+	    }
+	    exports.generate = _generate;
 
 	}).call(this);
 
@@ -225,22 +245,32 @@ return /******/ (function(modules) { // webpackBootstrap
 	        uniform = __webpack_require__(5),
 	        T       = __webpack_require__(3);
 
+
 	    var rNorm = 3.442619855899,
 	        blocks_v = 0.00991256303526217,
 	        blocks_f = Math.exp(-0.5 * rNorm * rNorm);
 
-	    function _blocksUnfoldHelper (seed) {
-	        var b = seed.fst,
-	            g = seed.snd,
+	/*
+	    function _blocksUnfoldHelper (s) {
+	        var b = s.fst,
+	            g = s.snd,
 	            h = Math.sqrt( -2 * Math.log( (blocks_v / b) + g ) ),
 	            u = new T.Tuple(h, Math.exp( -0.5 * h * h ) );
 
 	        return new T.Tuple( h, u );
-	    }
+	    } */
+
 
 	    var _blocks_ls = (function () {
 	        var seed = new T.Tuple( rNorm, blocks_f ),
-	            unfoldResult = _ss.unfoldrN( 126, _blocksUnfoldHelper, seed );
+	            unfoldResult = _ss.unfoldrN( 126, seed, function (s) {
+	                var b = s.fst,
+	                    g = s.snd,
+	                    h = Math.sqrt( -2 * Math.log( (blocks_v / b) + g ) ),
+	                    u = new T.Tuple(h, Math.exp( -0.5 * h * h ) );
+
+	                return new T.Tuple( h, u );
+	            } );
 
 	        unfoldResult.unshift(rNorm);
 	        unfoldResult.unshift(blocks_v/blocks_f);
@@ -252,9 +282,12 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 	    var _ratios_ls = (function () {
-	        return _ss.zipWith(function (a,b) {return a / b;}, _.rest(_blocks_ls), _blocks_ls);
+	        return _ss.zipWith(_.rest(_blocks_ls), _blocks_ls, function (a,b) {
+	            return a / b;
+	        });
 	    })();
 	    exports.ratios = _ratios_ls;
+
 
 	    function _normalTail (cond) {
 	        while(true) {
@@ -264,6 +297,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	            if(!(y * -2 < x*x)) return (cond ? x - rNorm : rNorm - x);
 	        }
 	    }
+
 
 	    function _standard () {
 	        while(true) {
