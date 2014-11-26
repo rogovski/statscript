@@ -1,0 +1,46 @@
+{
+  "name": "statscript",
+  "version": "0.0.0",
+  "description": "statscript lib",
+  "author": "Michael Rogowski <michaeljrogowski@gmail.com> (https://github.com/rogovski)",
+  "contributors": [
+  ],
+  "homepage": "https://github.com/rogovski/statscript",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/rogovski/statscript.git"
+  },
+  "keywords": [
+    "math",
+    "mathematics",
+    "statistics"
+  ],
+  "dependencies": {
+    "decimal.js": "~3.0.0"
+  },
+  "devDependencies": {
+    "webpack": "latest",
+    "mocha": "latest",
+    "istanbul": "latest",
+    "numbers": "latest",
+    "uglify-js": "latest",
+    "underscore": "latest",
+    "seed-random": "latest",
+    "gulp": "latest",
+    "gulp-util": "latest",
+    "exec": "latest",
+    "glob": "latest",
+    "mkdirp": "latest"
+  },
+  "main": "./index",
+  "scripts": {
+    "build": "gulp",
+    "watch": "gulp watch",
+    "docs": "gulp docs",
+    "test": "mocha test --recursive",
+    "coverage": "istanbul cover _mocha -- test --recursive; echo \"\nCoverage report is available at ./coverage/lcov-report/index.html\""
+  },
+  "engines": {
+    "node": ">= 0.9"
+  }
+}

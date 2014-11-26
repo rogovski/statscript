@@ -1,0 +1,19 @@
+{
+  "name": "statscript",
+  "version": "0.0.0",
+  "main": "./dist/statscript.min.js",
+  "ignore": [
+    "coverage",
+    "img",
+    "misc",
+    "node_modules",
+    "test",
+    "tools",
+    ".gitignore",
+    ".npmignore",
+    ".travis.yml",
+    "gulpfile.js",
+    "component.json",
+    "package.json"
+  ]
+}

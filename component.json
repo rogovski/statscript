@@ -1,0 +1,15 @@
+{
+  "name": "statscript",
+  "repo": "rogovski/statscript",
+  "description": "statscript lib.",
+  "version": "0.0.0",
+  "main": "dist/statscript.min.js",
+  "keywords": [
+    "math",
+    "statistics",
+    "probability"
+  ],
+  "scripts": [
+    "dist/statscript.min.js"
+  ]
+}
