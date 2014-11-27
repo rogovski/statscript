@@ -113,9 +113,15 @@ return /******/ (function(modules) { // webpackBootstrap
 	  ss.numeric.error = __webpack_require__(7);
 	  ss.numeric.kbn = __webpack_require__(8);
 	  ss.numeric.root = __webpack_require__(9);
+	  ss.numeric.chebyshev = __webpack_require__(10);
+	  ss.numeric.gamma = __webpack_require__(11);
 
 	  ss.distribution = {};
-	  ss.distribution.normal = __webpack_require__(10);
+	  ss.distribution.normal = __webpack_require__(12);
+
+	  ss.sample = {};
+	  ss.sample.collection = __webpack_require__(13);
+	  ss.sample.histogram = __webpack_require__(14);
 
 	  // return the new instance
 	  return ss;
@@ -137,10 +143,22 @@ return /******/ (function(modules) { // webpackBootstrap
 	(function () {
 	    'use strict';
 
-	    var _ = __webpack_require__(11);
+	    var _ = __webpack_require__(15);
 	    var T = __webpack_require__(3);
 
-	    function _foldL (fn, seed, ls) {
+
+	    //(a -> b -> b) -> b -> [a] -> b
+	    function _foldR (seed, ls, fn) {
+	        var acc = seed;
+	        for (var i = 0; i < ls.length; i++) {
+	            acc = fn( ls[i], acc );
+	        };
+	        return acc;
+	    }
+	    exports.foldR = _foldR;
+
+
+	    function _foldL (seed, ls, fn) {
 	        var acc = seed;
 	        for (var i = 0; i < ls.length; i++) {
 	            acc = fn( acc, ls[i] );
@@ -215,6 +233,16 @@ return /******/ (function(modules) { // webpackBootstrap
 	    }
 	    exports.generate = _generate;
 
+
+	    function _sum (ls) {
+	        var accum = 0;
+	        for (var i = 0; i < ls.length; i++) {
+	            accum += ls[i];
+	        };
+	        return accum;
+	    }
+	    exports.sum = _sum;
+
 	}).call(this);
 
 
@@ -231,6 +259,14 @@ return /******/ (function(modules) { // webpackBootstrap
 	        this.snd = snd;
 	    }
 	    exports.Tuple = _Tuple;
+
+
+	    function _Triple (fst,snd,trd) {
+	        this.fst = fst;
+	        this.snd = snd;
+	        this.trd = trd;
+	    }
+	    exports.Triple = _Triple;
 
 
 	    function _clone (t) {
@@ -281,7 +317,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    'use strict';
 
 	    var _ss     = __webpack_require__(2),
-	        _       = __webpack_require__(11),
+	        _       = __webpack_require__(15),
 	        uniform = __webpack_require__(4),
 	        T       = __webpack_require__(3);
 
@@ -373,6 +409,24 @@ return /******/ (function(modules) { // webpackBootstrap
 	    exports.tiny = 2.2250738585072014e-308;
 
 
+	    // Coefficients for 18-point Gauss-Legendre integration. They are
+	    // used in implementation of incomplete gamma and beta functions.
+	    exports.coefW = [ 0.0055657196642445571, 0.012915947284065419, 0.020181515297735382
+	                    , 0.027298621498568734,  0.034213810770299537, 0.040875750923643261
+	                    , 0.047235083490265582,  0.053244713977759692, 0.058860144245324798
+	                    , 0.064039797355015485,  0.068745323835736408, 0.072941885005653087
+	                    , 0.076598410645870640,  0.079687828912071670, 0.082187266704339706
+	                    , 0.084078218979661945,  0.085346685739338721, 0.085983275670394821
+	                    ];
+
+
+	    exports.coefY = [ 0.0021695375159141994, 0.011413521097787704, 0.027972308950302116
+	                    , 0.051727015600492421,  0.082502225484340941, 0.12007019910960293
+	                    , 0.16415283300752470,   0.21442376986779355,  0.27051082840644336
+	                    , 0.33199876341447887,   0.39843234186401943,  0.46931971407375483
+	                    , 0.54413605556657973,   0.62232745288031077,  0.70331500465597174
+	                    , 0.78649910768313447,   0.87126389619061517,  0.95698180152629142
+	                    ];
 	}).call(this);
 
 
@@ -415,6 +469,34 @@ return /******/ (function(modules) { // webpackBootstrap
 	        return 1 - _erf(x);
 	    }
 	    exports.erfc = _erfc;
+
+
+	    function _invErfc(p) {
+	        if(p === 2) return -Infinity;
+	        if(p === 0) return Infinity;
+
+	        if(p > 0 && p < 2) {
+	            var pp = p <= 1 ? p : (2 - p);
+	            var t = Math.sqrt(-2 * Math.log( 0.5 * pp ));
+	            var x0 = -0.70711 * ((2.30753 + t * 0.27061) / (1 + t * (0.99229 + t * 0.04481)) - t);
+
+	            var loop = function (j,x) {
+	                if(j >= 2) return x;
+	                else {
+	                    var err = _erfc(x) - pp,
+	                        x1 = x + err / (1.12837916709551257 * Math.exp(-x * x) - x * err);
+	                    return loop(j+1, x1);
+	                }
+	            };
+
+	            if(p <= 1) return loop(0,x0);
+
+	            return -loop(0,x0);
+	        }
+
+	        throw new Error("invErfc: p must be in [0,2]");
+	    }
+	    exports.invErfc = _invErfc;
 
 
 	    // mikolalysenko: https://www.npmjs.org/package/almost-equal
@@ -495,7 +577,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 	    function _sum (ls,fn) {
-	        return fn( _ss.foldL( _zero, ls, _add ) );
+	        return fn( _ss.foldL( _zero(), ls, _add ) );
 	    }
 	    exports.sum = _sum;
 
@@ -517,7 +599,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    'use strict';
 
 	    var _ss     = __webpack_require__(2),
-	        _       = __webpack_require__(11),
+	        _       = __webpack_require__(15),
 	        error   = __webpack_require__(7);
 
 
@@ -594,7 +676,245 @@ return /******/ (function(modules) { // webpackBootstrap
 	    'use strict';
 
 	    var _ss      = __webpack_require__(2),
-	        _        = __webpack_require__(11),
+	        T        = __webpack_require__(3),
+	        _        = __webpack_require__(15);
+
+
+	    function _chebyshev(x,coeffs) {
+	        var tail = _.rest(coeffs),
+	            folded = _ss.foldR(new T.Tuple(0,0), tail, function (k,t) {
+	                var b0 = t.fst, b1 = t.snd;
+	                return new T.Tuple(k + (x*2) * b0 - b1, b0)
+	            });
+
+	        return _.first(coeffs) + x * folded.fst - folded.snd;
+	    }
+	    exports.chebyshev = _chebyshev;
+
+
+	    function _chebyshevBroucke (x,coeffs) {
+	        var c = coeffs;
+	        c[0] = c[0]/2;
+
+	        return _chebyshev(x,c);
+	    }
+	    exports.chebyshevBroucke = _chebyshevBroucke;
+
+
+	}).call(this);
+
+
+/***/ },
+/* 11 */
+/***/ function(module, exports, __webpack_require__) {
+
+	(function () {
+
+	    'use strict';
+
+	    var _ss      = __webpack_require__(2),
+	        _        = __webpack_require__(15),
+	        error    = __webpack_require__(7),
+	        constant = __webpack_require__(6);
+
+
+	    function _logGamma (x) {
+
+	        if(x <= 0) return Infinity;
+
+	        // Handle positive infinity. logGamma overflows before 1e308 so
+	        // it's safe
+	        if(x > 1e308) return Infinity;
+
+
+	        var y = Math.log(x),
+	            alr2pi = 0.918938533204673,
+	            k = x * (y-1) - 0.5 * y + alr2pi,
+	            x1 = 1 / x,
+	            x2 = x1 * x1;
+
+
+	        var a,b,c;
+	        if(x < 0.5) { a = -y; b = x+1; c = x; }
+	        else        { a = 0;  b = x;   c = x-1; }
+
+
+	        var r1_0 = -2.66685511495,    r1_1 = -24.4387534237,     r1_2 = -21.9698958928,
+	            r1_3 = 11.1667541262,     r1_4 = 3.13060547623,      r1_5 = 0.607771387771,
+	            r1_6 = 11.9400905721,     r1_7 = 31.4690115749,      r1_8 = 15.2346874070,
+	            r2_0 = -78.3359299449,    r2_1 = -142.046296688,     r2_2 = 137.519416416,
+	            r2_3 =  78.6994924154,    r2_4 = 4.16438922228,      r2_5 = 47.0668766060,
+	            r2_6 = 313.399215894,     r2_7 = 263.505074721,      r2_8 = 43.3400022514,
+	            r3_0 = -2.12159572323e5,  r3_1 = 2.30661510616e5,    r3_2 = 2.74647644705e4,
+	            r3_3 = -4.02621119975e4,  r3_4 = -2.29660729780e3,   r3_5 = -1.16328495004e5,
+	            r3_6 = -1.46025937511e5,  r3_7 = -2.42357409629e4,   r3_8 = -5.70691009324e2,
+	            r4_0 = 0.279195317918525, r4_1 = 0.4917317610505968, r4_2 = 0.0692910599291889,
+	            r4_3 = 3.350343815022304, r4_4 = 6.012459259764103;
+
+
+	        // Normal cases
+	        if(x < 1.5)
+	            return a + c *
+	                  ((((r1_4 * b + r1_3) * b + r1_2) * b + r1_1) * b + r1_0) /
+	                  ((((b + r1_8) * b + r1_7) * b + r1_6) * b + r1_5);
+
+	        if(x < 4)
+	            return (x - 2) *
+	                  ((((r2_4 * x + r2_3) * x + r2_2) * x + r2_1) * x + r2_0) /
+	                  ((((x + r2_8) * x + r2_7) * x + r2_6) * x + r2_5);
+
+	        if(x < 12)
+	            return ((((r3_4 * x + r3_3) * x + r3_2) * x + r3_1) * x + r3_0) /
+	                   ((((x + r3_8) * x + r3_7) * x + r3_6) * x + r3_5);
+
+	        if(x > 3e6)
+	            return k;
+
+	        /* otherwise*/
+	            return k + x1 *
+	                  ((r4_2 * x2 + r4_1) * x2 + r4_0) /
+	                  ((x2 + r4_4) * x2 + r4_3);
+	    }
+	    exports.logGamma = _logGamma;
+
+
+	    function _logGammaL(x) {
+
+	        if (x <= 0) return Infinity;
+
+	        if (x <= 1e-3) return _logGamma(x);
+
+	        var x65 = x + 6.5,
+	            a0  = 0.9999999999995183,
+	            a   = [ 0.1659470187408462e-06
+	                  , 0.9934937113930748e-05
+	                  , -0.1385710331296526
+	                  , 12.50734324009056
+	                  , -176.6150291498386
+	                  , 771.3234287757674
+	                  , -1259.139216722289
+	                  , 676.5203681218835
+	                  ];
+
+	        var folded = _ss.foldL(new T.Tuple(0,x+7), a, function (t,k) {
+	            var l = t.fst, t = t.snd;
+	            return new T.Tuple(l + k / t, t-1);
+	        });
+
+	        return Math.log(folded.fst + a0) + Math.log(constant.sqrt_2_pi) - x65 + (x-0.5) * Math.log(x65);
+	    }
+	    exports.logGammaL = _logGammaL;
+
+
+
+	    var ig_limit = -88, ig_tolerance = 1e-14, ig_overflow = 1e37;
+
+	    function _pearson(x,a,c,g) {
+	        var a0 = a, c0 = c, g0 = g;
+
+	        while(true) {
+	            var a1 = a0 + 1, c1 = c0 * x / a1, g1 = g0 + c1;
+
+	            if(c1 <= ig_tolerance) return g1;
+
+	            a0 = a1, c0 = c1, g0 = g1;
+	        }
+
+	    }
+
+
+	    function _contFrac(a,b,c,p1,p2,p3,p4,g) {
+
+	        var a1 = a + 1,
+	            b1 = b + 2,
+	            c1 = c + 1,
+	            an = a1 * c1,
+	            p5 = b1 * p3 - an * p1,
+	            p6 = b1 * p4 - an * p2,
+	            rn = p5 / p6,
+	            f = function (n) {
+	                if(Math.abs(p5) > ig_overflow) return n / ig_overflow;
+	                else return n;
+	            };
+
+	        if(Math.abs(g - rn) <= Math.min(ig_tolerance, ig_tolerance * rn)) return g;
+	        else return _contFrac(a1,b1,c1,f(p3),f(p4),f(p5),f(p6),rn);
+	    }
+
+
+	    function _g1Approx (x,p) {
+
+	        var p1     = p - 1,
+	            lnP1   = Math.log(p1),
+	            sqrtP1 = Math.sqrt(p1),
+
+	            // Set upper limit for integration
+	            xu = x > p1 ? Math.max(p1 + 11.5*sqrtP1, x + 6*sqrtP1) :
+	                          Math.max(0, Math.min(p1 -  7.5*sqrtP1,x - 5*sqrtP1)),
+
+	            go = function (y,w) {
+	                var t = x + (xu - x)*y;
+	                return w * Math.exp( -(t-p1) + p1*(Math.log(t) - lnP1) );
+	            },
+
+	            s = _ss.sum( _ss.zipWith(constant.coefY,constant.coefW,go) ),
+
+	            ans = s * (xu - x) * Math.exp( p1 * (lnP1 - 1) - _logGamma(p) );
+
+
+	        if(ans > 0) return 1 - ans;
+
+	        return -ans;
+
+	    }
+
+
+	    function _incompleteGamma (p,x) {
+
+	        if(isNaN(p) || isNaN(x)) return NaN;
+
+	        if(x < 0 || p <= 0) return Infinity;
+
+	        if(x === 0) return 0;
+
+	        var norm = function (a) { return 0.5 * error.erfc(- a / constant.sqrt_2); };
+
+	        if(p >= 2e5) return norm(3 * Math.sqrt(p) * ( Math.pow(x/p,1/3) + 1/(9*p) - 1) );
+
+	        if(p >= 500) return _g1Approx(x,p);
+
+	        if(x >= 1e8) return 1;
+
+	        if(x <= 1 || x < p) {
+	            var a = p * Math.log(x) - x - _logGamma(p + 1),
+	                g0 = a + Math.log( _pearson(x,p,1,1) );
+	            return g0 > ig_limit ? Math.exp(g0) : 0;
+	        }
+
+	        var cf_a = 1 - p,
+	            cf_b = cf_a + x + 1,
+	            p3 = x + 1,
+	            p4 = x * cf_b,
+	            cf = _contFrac(cf_a, cf_b, 0, 1, x, p3, p4, (p3/p4));
+
+	        var g1 = p * Math.log(x) - x - _logGamma(p) + Math.log(cf);
+	        return g1 > ig_limit ? 1 - Math.exp(g1) : 1;
+	    }
+	    exports.incompleteGamma = _incompleteGamma;
+
+	}).call(this);
+
+
+/***/ },
+/* 12 */
+/***/ function(module, exports, __webpack_require__) {
+
+	(function () {
+
+	    'use strict';
+
+	    var _ss      = __webpack_require__(2),
+	        _        = __webpack_require__(15),
 	        error    = __webpack_require__(7),
 	        constant = __webpack_require__(6);
 
@@ -668,11 +988,279 @@ return /******/ (function(modules) { // webpackBootstrap
 	    exports.complCdf = _complCdf;
 
 
+	    function _quantile(dist,p) {
+	        if(p === 0) return - Infinity;
+
+	        if(p === 1) return Infinity;
+
+	        if(p === 0.5) return dist.mean;
+
+	        if(p > 0 && p < 1) {
+	            var x = - error.invErfc(2 * p);
+	            return x * dist.cdfDenom + dist.mean;
+	        }
+
+	        throw new Error("statistics.distribution.normal.quantile: p must be in [0,1] range.");
+	    }
+	    exports.quantile = _quantile;
+
+
+	    function _logDensity(dist,x) {
+	        var xm = x - dist.mean, sd = dist.stdDev;
+	        return (-xm * xm / (2 * sd * sd)) - dist.pdfDenom;
+	    }
+	    exports.logDensity = _logDensity;
+
+
+	    function _density(distribution,x) {
+	        if( !(distribution instanceof _ND) ) {
+	            throw new Error(
+	                "statscript.distribution.normal.density: " +
+	                "distribution parameter is not Normal"
+	            );
+	        };
+
+	        // if @distribution is the only parameter
+	        // partially apply the density function to it
+	        if(_.isUndefined(x)) {
+
+	            return function (p) {
+	                return Math.exp(_logDensity(distribution,p));
+	            }
+	        }
+
+	        return Math.exp(_logDensity(distribution,x));
+	    }
+	    exports.density = _density;
+
+
+	    function _findRoot(dist,prob,initGuess,lower,upper) {
+	        var accuracy = 1e-15, maxIters = 150;
+	        var loop = function (i,dx,x,lo,hi) {
+	            // base case: return guess
+	            if(Math.abs(dx) <= accuracy || i >= maxIters) return x;
+
+	            else {
+	                var err = _cdf(dist,x) - prob, pdf = _density(dist,x);
+
+	                var lo1, hi1, dx1, x1, dx2, x2;
+
+	                if(err < 0) { lo1 = x; hi1 = hi; }
+	                else { lo1 = lo; hi1 = x; }
+
+	                if(pdf != 0) { dx1 = (err / pdf); x1 = (x-dx); }
+	                else { dx1 = dx; x1 = x; }
+
+	                if(x1 < lo1 || x1 > hi1 || pdf === 0) { var y = (lo1 + hi1) / 2; dx2 = y-x; x2 = y; }
+	                else { dx2 = dx1; x2 = x1; }
+
+	                return loop( (i+1), dx2, x2, lo1, hi1 );
+	            }
+	        };
+
+	        return loop(0,1,initGuess,lower,upper);
+	    }
+	    exports.findRoot = _findRoot;
+
+
 	}).call(this);
 
 
 /***/ },
-/* 11 */
+/* 13 */
+/***/ function(module, exports, __webpack_require__) {
+
+	(function () {
+
+	    'use strict';
+
+	    var T        = __webpack_require__(3),
+	        _ss      = __webpack_require__(2),
+	        _        = __webpack_require__(15),
+	        kbn      = __webpack_require__(8);
+
+
+	        function _kbn_sum (ls) {
+	            return kbn.sum( ls, kbn.unpack );
+	        }
+
+
+	        function _robustSumVar(m, ls) {
+	            return _kbn_sum( _.map( ls, function (n) {
+	                return Math.pow( n - m, 2 );
+	            } ) );
+	        }
+
+
+	        function _range(sample) {
+	            return _.max(sample) - _.min(sample);
+	        }
+	        exports.range = _range;
+
+
+	        function _mean(sample) {
+	            return _kbn_sum(sample) / sample.length;
+	        }
+	        exports.mean = _mean;
+
+
+	        function _centralMoment(a,sample) {
+
+	            if(a < 0) throw new Error("statscript.sample.centralMoment: negative input");
+	            else if(a == 0) return 1;
+	            else if(a == 1) return 0;
+	            else {
+	                var m = _mean(sample);
+	                var go = function (x) {
+	                    return Math.pow(x - m,a);
+	                };
+
+	                return _kbn_sum( _.map( sample, go ) ) / sample.length;
+	            }
+	        }
+	        exports.centralMoment = _centralMoment;
+
+
+	        function _centralMoments(a,b,sample) {
+	            var tuple = mk_tuple;
+
+	            if(a < 2 || b < 2) {
+	                return new T.Tuple( _centralMoment( a, sample ), _centralMoment( b, sample ) );
+	            }
+	            else {
+	                var m = _mean( sample );
+	                var n = sample.length;
+
+	                var finish = function (tup) { return new T.Tuple( tup.fst / n, tup.snd / n ); };
+	                var go = function (tup, x) {
+	                    var d = x - m;
+	                    var one = tup.fst + Math.pow(d,a);
+	                    var two = tup.snd + Math.pow(d,b);
+	                    return new T.Tuple(one,two);
+	                };
+	                return finish( _ss.foldL( new T.Tuple(0,0), sample, go ) );
+	            }
+	        }
+	        exports.centralMoments = _centralMoments;
+
+
+	        function _skewness(sample) {
+	            var cm = _centralMoments( 3, 2, sample );
+	            return cm.fst * Math.pow( cm.snd, - 1.5 );
+	        }
+	        exports.skewness = _skewness;
+
+
+	        function _kurtosis(sample) {
+	            var cm = _centralMoments( 4, 2, sample );
+	            return ( cm.fst / ( cm.snd * cm.snd ) ) - 3;
+	        }
+	        exports.kurtosis = _kurtosis;
+
+
+	        function _variance(sample) {
+	            var n = sample.length;
+
+	            if(n > 1) return _robustSumVar(_mean(sample), sample) / n;
+	            else return 0;
+	        }
+	        exports.variance = _variance;
+
+
+	        function _varianceUnbiased(sample) {
+	            var n = sample.length;
+
+	            if(n > 1) return _robustSumVar(_mean(sample), sample) / ( n - 1 );
+	            else return 0;
+	        }
+	        exports.varianceUnbiased = _varianceUnbiased;
+
+
+	        function _stdDev(sample) {
+	            return Math.sqrt(_varianceUnbiased( sample ));
+	        }
+	        exports.stdDev = _stdDev;
+
+
+	}).call(this);
+
+
+/***/ },
+/* 14 */
+/***/ function(module, exports, __webpack_require__) {
+
+	(function () {
+
+	    'use strict';
+
+	    var T        = __webpack_require__(3),
+	        _ss      = __webpack_require__(2),
+	        _        = __webpack_require__(15),
+	        constant = __webpack_require__(6);
+
+
+	        function _histogramHelper (numberOfBins,lo,hi,sample) {
+	            return histogramBinHelper(numberOfBins, lo, hi, sample,
+	                _ss.replicate(numberOfBins, 0));
+	        }
+
+
+	        function _histogramBinHelper(numberOfBins,lo,hi,xs,bins) {
+	            var len = xs.length,
+	                d = ( (hi - lo) * (1 + Number.EPSILON) ) / numberOfBins;
+
+	            var go = function (i) {
+	                if(i >= len) return bins;
+	                else {
+	                    var x = xs[i], b = Math.trunc( (x - lo) / d );
+	                    bins[b] = bins[b] + 1;
+	                    return go(i+1);
+	                }
+	            };
+
+	            return go(0);
+	        }
+
+
+	        function _histogram(numberOfBins, sample) {
+	            var lohi = _range(numberOfBins, sample);
+	            var lo = lohi.lo, hi = lohi.hi;
+	            var d = (hi - lo) / numberOfBins;
+	            var step = function (i) { return lo + d * i; }
+
+	            return {
+	                bins: _ss.generate(numberOfBins,step),
+	                frequency: _histogramHelper(numberOfBins, lo, hi, sample)
+	            };
+	        }
+	        exports.histogram = _histogram;
+
+
+	        function _range(numberOfBins, sample) {
+	            if(numberOfBins < 1) throw new Error("statscript.sample.histogram.range: invalid bin count");
+
+	            if(sample.length == 0) throw new Error("statscript.sample.histogram.range: empty sample");
+
+	            var lo = _.min(sample), hi = _.max(sample);
+
+	            if(lo === hi) {
+	                var a = Math.abs( lo ) / 10;
+	                if(a < constant.tiny) return { lo: -1, hi: 1 };
+	                else return { lo: lo - a, hi: lo + a };
+	            }
+	            else {
+	                var d = numberOfBins === 1 ? 0 : ( (hi - lo) / ( (numberOfBins - 1) * 2 ) );
+	                return { lo: lo - d, hi: hi + d };
+	            }
+	        }
+	        exports.range = _range;
+
+
+	}).call(this);
+
+
+/***/ },
+/* 15 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;//     Underscore.js 1.7.0
