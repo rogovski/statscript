@@ -2,7 +2,7 @@
  * statscript.js
  *
  * @version 0.0.0
- * @date    2014-11-26
+ * @date    2014-11-28
  *
  * @license
  * Copyright (C) 2014 Michael Rogowski <michaeljrogowski@gmail.com>
@@ -101,27 +101,30 @@ return /******/ (function(modules) { // webpackBootstrap
 	  ss.create = create;
 
 	  ss.collection = __webpack_require__(2);
-
 	  ss.tuple = __webpack_require__(3);
+	  ss.number = __webpack_require__(4);
 
 	  ss.random = {};
-	  ss.random.uniform = __webpack_require__(4);
-	  ss.random.normal = __webpack_require__(5);
+	  ss.random.uniform = __webpack_require__(5);
+	  ss.random.normal = __webpack_require__(6);
 
 	  ss.numeric = {};
-	  ss.numeric.constants = __webpack_require__(6);
-	  ss.numeric.error = __webpack_require__(7);
-	  ss.numeric.kbn = __webpack_require__(8);
-	  ss.numeric.root = __webpack_require__(9);
-	  ss.numeric.chebyshev = __webpack_require__(10);
-	  ss.numeric.gamma = __webpack_require__(11);
+	  ss.numeric.constants = __webpack_require__(7);
+	  ss.numeric.error = __webpack_require__(8);
+	  ss.numeric.kbn = __webpack_require__(9);
+	  ss.numeric.root = __webpack_require__(10);
+	  ss.numeric.chebyshev = __webpack_require__(11);
+	  ss.numeric.gamma = __webpack_require__(12);
+	  ss.numeric.logarithm = __webpack_require__(13);
+	  ss.numeric.beta = __webpack_require__(14);
+	  ss.numeric.combinations = __webpack_require__(15);
 
 	  ss.distribution = {};
-	  ss.distribution.normal = __webpack_require__(12);
+	  ss.distribution.normal = __webpack_require__(16);
 
 	  ss.sample = {};
-	  ss.sample.collection = __webpack_require__(13);
-	  ss.sample.histogram = __webpack_require__(14);
+	  ss.sample.collection = __webpack_require__(17);
+	  ss.sample.histogram = __webpack_require__(18);
 
 	  // return the new instance
 	  return ss;
@@ -143,9 +146,20 @@ return /******/ (function(modules) { // webpackBootstrap
 	(function () {
 	    'use strict';
 
-	    var _ = __webpack_require__(15);
+	    var _ = __webpack_require__(19);
 	    var T = __webpack_require__(3);
 
+	    //(a -> a -> a) -> [a] -> a
+	    function _foldR1 (ls, fn) {
+	        if(ls.length == 0) throw new Error('foldr1: empty list');
+
+	        var acc = ls[0];
+	        for (var i = 1; i < ls.length; i++) {
+	            acc = fn( ls[i], acc );
+	        };
+	        return acc;
+	    }
+	    exports.foldR1 = _foldR1;
 
 	    //(a -> b -> b) -> b -> [a] -> b
 	    function _foldR (seed, ls, fn) {
@@ -286,6 +300,59 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	    'use strict';
 
+	    var T        = __webpack_require__(3),
+	        _        = __webpack_require__(19);
+
+
+	    function _sign (x) {
+	        if(x > 0) return 1;
+
+	        if(x < 0) return -1;
+
+	        if(x === 0) return 0;
+	    }
+
+	    // takes a real fractional number x and returns a pair (n,f) such that x = n+f
+	    function _properFraction(x) {
+
+	        if(isNaN(x)) return NaN;
+
+	        var sign = Math.sign(x), abs_x = Math.abs(x);
+
+	        var str_x = abs_x+'';
+
+	        if(!_.contains(str_x,'.')){
+	            return new T.Tuple(sign*parseInt(str_x),0.0);
+	        }
+	        else {
+	            if(str_x[0] === '.') {
+	                str_x = '0'+str_x;
+	                return new T.Tuple(0,sign*parseFloat(str_x));
+	            }
+
+	            var splt = str_x.split('.'),
+	                intpart = parseInt(splt[0]),
+	                fractpart = parseFloat('0.'+splt[1]),
+	                intres = intpart === 0 ? 0 : sign*intpart,
+	                fracres = fractpart === 0 ? 0 : sign*fractpart;
+
+	            return new T.Tuple(intres,fracres);
+	        }
+	    }
+	    exports.properFraction = _properFraction;
+
+
+	}).call(this);
+
+
+/***/ },
+/* 5 */
+/***/ function(module, exports, __webpack_require__) {
+
+	(function () {
+
+	    'use strict';
+
 	    function _uniform_Float () {
 	        return Math.random(0,1);
 	    }
@@ -309,7 +376,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 5 */
+/* 6 */
 /***/ function(module, exports, __webpack_require__) {
 
 	(function () {
@@ -317,8 +384,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	    'use strict';
 
 	    var _ss     = __webpack_require__(2),
-	        _       = __webpack_require__(15),
-	        uniform = __webpack_require__(4),
+	        _       = __webpack_require__(19),
+	        uniform = __webpack_require__(5),
 	        T       = __webpack_require__(3);
 
 
@@ -392,7 +459,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 6 */
+/* 7 */
 /***/ function(module, exports, __webpack_require__) {
 
 	(function () {
@@ -407,6 +474,12 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 	    exports.tiny = 2.2250738585072014e-308;
+
+
+	    exports.m_eulerMascheroni = 0.5772156649015328606065121;
+
+
+	    exports.ln_sqrt_2_pi = 0.9189385332046727417803297364056176398613974736377834128171;
 
 
 	    // Coefficients for 18-point Gauss-Legendre integration. They are
@@ -431,7 +504,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 7 */
+/* 8 */
 /***/ function(module, exports, __webpack_require__) {
 
 	(function () {
@@ -521,7 +594,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 8 */
+/* 9 */
 /***/ function(module, exports, __webpack_require__) {
 
 	(function () {
@@ -591,7 +664,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 9 */
+/* 10 */
 /***/ function(module, exports, __webpack_require__) {
 
 	(function () {
@@ -599,8 +672,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	    'use strict';
 
 	    var _ss     = __webpack_require__(2),
-	        _       = __webpack_require__(15),
-	        error   = __webpack_require__(7);
+	        _       = __webpack_require__(19),
+	        error   = __webpack_require__(8);
 
 
 	    function _RootResult(a) {
@@ -668,7 +741,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 10 */
+/* 11 */
 /***/ function(module, exports, __webpack_require__) {
 
 	(function () {
@@ -677,7 +750,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	    var _ss      = __webpack_require__(2),
 	        T        = __webpack_require__(3),
-	        _        = __webpack_require__(15);
+	        _        = __webpack_require__(19);
 
 
 	    function _chebyshev(x,coeffs) {
@@ -705,17 +778,18 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 11 */
+/* 12 */
 /***/ function(module, exports, __webpack_require__) {
 
 	(function () {
 
 	    'use strict';
 
-	    var _ss      = __webpack_require__(2),
-	        _        = __webpack_require__(15),
-	        error    = __webpack_require__(7),
-	        constant = __webpack_require__(6);
+	    var _ss       = __webpack_require__(2),
+	        _         = __webpack_require__(19),
+	        error     = __webpack_require__(8),
+	        constant  = __webpack_require__(7),
+	        chebyshev = __webpack_require__(11);
 
 
 	    function _logGamma (x) {
@@ -806,7 +880,37 @@ return /******/ (function(modules) { // webpackBootstrap
 	    exports.logGammaL = _logGammaL;
 
 
+	    function _logGammaCorrection(x) {
+	        if(x < 10) return NaN;
 
+	        var big    = 94906265.62425156,
+	            t      = 10 / x,
+	            coeffs = [
+	                       0.1666389480451863247205729650822e0,
+	                      -0.1384948176067563840732986059135e-4,
+	                       0.9810825646924729426157171547487e-8,
+	                      -0.1809129475572494194263306266719e-10,
+	                       0.6221098041892605227126015543416e-13,
+	                      -0.3399615005417721944303330599666e-15,
+	                       0.2683181998482698748957538846666e-17
+	                     ];
+
+	        if(x < big) return chebyshev.chebyshevBroucke( (t * t * 2 - 1), coeffs ) / x;
+
+	        return 1 / ( x * 12 );
+	    }
+	    exports.logGammaCorrection = _logGammaCorrection;
+
+
+	    /**
+	     * LOWER INCOMPLETE GAMMA
+	     *
+	     * given by:
+	     *           x
+	     *  γ(p,x) = ∫ ( t ^ ( p - 1 ) ) * ( e ^ ( - t ) ) dt
+	     *           0
+	     *
+	     **/
 	    var ig_limit = -88, ig_tolerance = 1e-14, ig_overflow = 1e37;
 
 	    function _pearson(x,a,c,g) {
@@ -819,7 +923,6 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	            a0 = a1, c0 = c1, g0 = g1;
 	        }
-
 	    }
 
 
@@ -858,17 +961,15 @@ return /******/ (function(modules) { // webpackBootstrap
 	            },
 
 	            s = _ss.sum( _ss.zipWith(constant.coefY,constant.coefW,go) ),
-
 	            ans = s * (xu - x) * Math.exp( p1 * (lnP1 - 1) - _logGamma(p) );
-
 
 	        if(ans > 0) return 1 - ans;
 
 	        return -ans;
-
 	    }
 
 
+	    // note: @x is the upper bound on the integral
 	    function _incompleteGamma (p,x) {
 
 	        if(isNaN(p) || isNaN(x)) return NaN;
@@ -902,11 +1003,230 @@ return /******/ (function(modules) { // webpackBootstrap
 	    }
 	    exports.incompleteGamma = _incompleteGamma;
 
+
+	    function _invIncompleteGamma () {
+
+	    }
+
+
 	}).call(this);
 
 
 /***/ },
-/* 12 */
+/* 13 */
+/***/ function(module, exports, __webpack_require__) {
+
+	(function () {
+
+	    'use strict';
+
+	    var chebyshev = __webpack_require__(11);
+
+	    /*
+	     * Compute the natural logarithm of 1 + x.  This is accurate even
+	     * for values of x near zero, where use of log(1+x) would lose
+	     * precision.
+	     **/
+	    function _log1p (x) {
+
+	        if(x == 0) return 0;
+
+	        if(x == -1) return -Infinity;
+
+	        if(x < -1) return NaN;
+
+	        var x1 = Math.abs(x),
+	            coeffs = [
+	                       0.10378693562743769800686267719098e+1,
+	                      -0.13364301504908918098766041553133e+0,
+	                       0.19408249135520563357926199374750e-1,
+	                      -0.30107551127535777690376537776592e-2,
+	                       0.48694614797154850090456366509137e-3,
+	                      -0.81054881893175356066809943008622e-4,
+	                       0.13778847799559524782938251496059e-4,
+	                      -0.23802210894358970251369992914935e-5,
+	                       0.41640416213865183476391859901989e-6,
+	                      -0.73595828378075994984266837031998e-7,
+	                       0.13117611876241674949152294345011e-7,
+	                      -0.23546709317742425136696092330175e-8,
+	                       0.42522773276034997775638052962567e-9,
+	                      -0.77190894134840796826108107493300e-10,
+	                       0.14075746481359069909215356472191e-10,
+	                      -0.25769072058024680627537078627584e-11,
+	                       0.47342406666294421849154395005938e-12,
+	                      -0.87249012674742641745301263292675e-13,
+	                       0.16124614902740551465739833119115e-13,
+	                      -0.29875652015665773006710792416815e-14,
+	                       0.55480701209082887983041321697279e-15,
+	                      -0.10324619158271569595141333961932e-15
+	                     ];
+
+	        if(x1 < Number.EPSILON * 0.5) return x;
+
+	        if((x >= 0 && x < 1e-8) || (x >= -1e-9 && x < 0)) return x * (1 - x * 0.5);
+
+	        if(x1 < 0.375) return x * (1 - x * chebyshev.chebyshevBroucke((x / 0.375), coeffs));
+
+	        return Math.log(1+x);
+	    }
+	    exports.log1p = _log1p;
+
+
+
+	}).call(this);
+
+
+/***/ },
+/* 14 */
+/***/ function(module, exports, __webpack_require__) {
+
+	(function () {
+
+	    'use strict';
+
+	    var _ss       = __webpack_require__(2),
+	        _         = __webpack_require__(19),
+	        error     = __webpack_require__(8),
+	        constant  = __webpack_require__(7),
+	        gamma     = __webpack_require__(12),
+	        logarithm = __webpack_require__(13);
+
+
+	    function _logBeta (a,b) {
+
+	        var p   = Math.min(a, b),
+	            q   = Math.max(a, b),
+	            ppq = p / pq,
+	            pq  = p + q,
+	            c   = gamma.logGammaCorrection(q) - logGammaCorrection(pq);
+
+	        if(p < 0) return NaN;
+
+	        if(p == 0) return Infinity;
+
+	        if(p >= 10) return Math.log(q) * (-0.5) + constant.ln_sqrt_2_pi +
+	                           gamma.logGammaCorrection(p) + c + (p - 0.5) *
+	                           Math.log(ppq) + q * logarithm.log1p(-ppq);
+
+	        if(q >= 10) return gamma.logGamma(p) + c + p - p * Math.log(pq) +
+	                           (q - 0.5) * logarithm.log1p(-ppq);
+
+	        return gamma.logGamma(p) + gamma.logGamma(q) - gamma.logGamma(pq);
+	    }
+
+
+	    function _incompleteBeta (p,q,x) {
+	        return _incompleteBeta_0(_logBeta(p,q),p,q,x);
+	    }
+
+
+	    function _incompleteBeta_0 (beta,p,q,x) {
+	        if(p <= 0 || q <= 0) throw new Error("incompleteBeta_: p <= 0 || q <= 0");
+
+	        if(x <  0 || x >  1 || isNaN(x)) throw new Error("incompletBeta_: x out of [0,1] range");
+
+	        if(x == 0 || x == 1) return x;
+
+	        if(p >= (p+q) * x) return _incompleteBetaWorker(beta, p, q, x);
+
+	        return 1 - _incompleteBetaWorker(beta, q, p, (1-x));
+	    }
+
+
+	    function _incompleteBetaApprox (beta, p, q, x) {
+	        var p1    = p - 1,
+	            q1    = q - 1,
+	            mu    = p / (p + q),
+	            lnmu  = Math.log(mu),
+	            lnmuc = Math.log(1 - mu),
+
+	            t = Math.sqrt(p*q / ( (p+q) * (p+q) * (p + q + 1) )),
+
+	            // Upper limit for integration
+	            xu = Math.max(0, Math.min(mu - 10*t, x - 5*t)),
+
+	            // Calculate incomplete beta by quadrature
+	            go = function (y,w) {
+	                var go_t = x + (xu - x) * y;
+	                return w * Math.exp( p1 * (Math.log(go_t) - lnmu) + q1 * (Math.log(1-t) - lnmuc) );
+	            },
+
+	            s   = _ss.sum(_ss.zipWith( constant.coefY, constant.coefW, go)),
+	            ans = s * (xu - x) * Math.exp( p1 * lnmu + q1 * lnmuc - beta );
+
+	        if(ans > 0) return 1 - ans;
+
+	        return -ans;
+	    }
+
+
+	    function _incompleteBetaWorker (beta, p, q, x) {
+
+	        if(p > 3000 && q > 3000) return _incompleteBetaApprox(beta, p, q, x);
+
+	        var eps = 1e-15, cx  = 1 - x;
+
+	        var psq = (p+q), ns = Math.trunc(q + cx * (p+q)), ai = 1, term = 1, betain = 1;
+
+	        while(true) {
+	            var fact;
+	            if     (ns > 0)  fact = (q - ai) * x/cx;
+	            else if(ns == 0) fact = (q - ai) * x;
+	            else             fact = psq * x;
+
+	            var term1 = term * fact / (p + ai),
+	                betain1 = betain + term1,
+	                psq1 = ns < 0 ? psq + 1 : psq,
+	                db = Math.abs(term1);
+
+	            if(db <= eps && db <= eps*betain1)
+	                return betain1 * Math.exp( p * Math.log(x) + (q - 1) * Math.log(cx) - beta) / p;
+
+	            psq = psq1;
+	            ns = ns - 1;
+	            ai = ai + 1;
+	            term = term1;
+	            betain = betain1;
+	        }
+	    }
+
+
+	    function _invIncompleteBeta () {
+
+	    }
+
+
+	    function _invIncompleteBetaWorker () {
+
+	    }
+
+	}).call(this);
+
+
+/***/ },
+/* 15 */
+/***/ function(module, exports, __webpack_require__) {
+
+	(function () {
+
+	    'use strict';
+
+	    function _choose(n,k) {
+	        var max = Math.max(k, n - k);
+	        var result = 1;
+	        for (var i = 1; i <= n - max; i++) {
+	            result = result * (max + i) / i;
+	        }
+	        return result;
+	    }
+	    exports.choose = _choose;
+
+
+	}).call(this);
+
+
+/***/ },
+/* 16 */
 /***/ function(module, exports, __webpack_require__) {
 
 	(function () {
@@ -914,9 +1234,9 @@ return /******/ (function(modules) { // webpackBootstrap
 	    'use strict';
 
 	    var _ss      = __webpack_require__(2),
-	        _        = __webpack_require__(15),
-	        error    = __webpack_require__(7),
-	        constant = __webpack_require__(6);
+	        _        = __webpack_require__(19),
+	        error    = __webpack_require__(8),
+	        constant = __webpack_require__(7);
 
 
 	    function _ND(mean, stdDev) {
@@ -1067,7 +1387,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 13 */
+/* 17 */
 /***/ function(module, exports, __webpack_require__) {
 
 	(function () {
@@ -1076,8 +1396,8 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	    var T        = __webpack_require__(3),
 	        _ss      = __webpack_require__(2),
-	        _        = __webpack_require__(15),
-	        kbn      = __webpack_require__(8);
+	        _        = __webpack_require__(19),
+	        kbn      = __webpack_require__(9);
 
 
 	        function _kbn_sum (ls) {
@@ -1186,7 +1506,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 14 */
+/* 18 */
 /***/ function(module, exports, __webpack_require__) {
 
 	(function () {
@@ -1195,8 +1515,8 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	    var T        = __webpack_require__(3),
 	        _ss      = __webpack_require__(2),
-	        _        = __webpack_require__(15),
-	        constant = __webpack_require__(6);
+	        _        = __webpack_require__(19),
+	        constant = __webpack_require__(7);
 
 
 	        function _histogramHelper (numberOfBins,lo,hi,sample) {
@@ -1260,7 +1580,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 15 */
+/* 19 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;//     Underscore.js 1.7.0
