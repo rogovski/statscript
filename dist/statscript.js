@@ -116,15 +116,18 @@ return /******/ (function(modules) { // webpackBootstrap
 	  ss.numeric.chebyshev = __webpack_require__(11);
 	  ss.numeric.gamma = __webpack_require__(12);
 	  ss.numeric.logarithm = __webpack_require__(13);
-	  ss.numeric.beta = __webpack_require__(14);
-	  ss.numeric.combinations = __webpack_require__(15);
+	  ss.numeric.polynomial = __webpack_require__(14);
+	  ss.numeric.beta = __webpack_require__(15);
+	  ss.numeric.combinations = __webpack_require__(16);
+	  ss.numeric.factorial = __webpack_require__(17);
 
 	  ss.distribution = {};
-	  ss.distribution.normal = __webpack_require__(16);
+	  ss.distribution.normal = __webpack_require__(18);
+	  ss.distribution.poisson = __webpack_require__(19);
 
 	  ss.sample = {};
-	  ss.sample.collection = __webpack_require__(17);
-	  ss.sample.histogram = __webpack_require__(18);
+	  ss.sample.collection = __webpack_require__(20);
+	  ss.sample.histogram = __webpack_require__(21);
 
 	  // return the new instance
 	  return ss;
@@ -146,7 +149,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	(function () {
 	    'use strict';
 
-	    var _ = __webpack_require__(19);
+	    var _ = __webpack_require__(22);
 	    var T = __webpack_require__(3);
 
 	    //(a -> a -> a) -> [a] -> a
@@ -301,7 +304,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    'use strict';
 
 	    var T        = __webpack_require__(3),
-	        _        = __webpack_require__(19);
+	        _        = __webpack_require__(22);
 
 
 	    function _sign (x) {
@@ -341,6 +344,26 @@ return /******/ (function(modules) { // webpackBootstrap
 	    }
 	    exports.properFraction = _properFraction;
 
+
+	    function _bd0(x,np) {
+	        if(!isFinite(x) || !isFinite(np) || np === 0) return NaN;
+
+	        if(Math.abs(x_np) >= 0.1 * (x+np)) return x * Math.log(x/np) - x_np;
+
+	        var x_np = x - np, v = x_np / (x + np), s0 = x_np * v, ej0  = 2*x*v, vv = v*v;
+
+	        var j = 1, ej = ej0*vv, s = s0;
+
+	        while(true) {
+	            var s1 = s + ej/(2*j+1);
+	            if(s1 == s) return s1;
+
+	            j = j+1;
+	            ej = ej*vv;
+	            s = s1;
+	        }
+	    }
+	    exports.bd0 = _bd0;
 
 	}).call(this);
 
@@ -384,7 +407,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    'use strict';
 
 	    var _ss     = __webpack_require__(2),
-	        _       = __webpack_require__(19),
+	        _       = __webpack_require__(22),
 	        uniform = __webpack_require__(5),
 	        T       = __webpack_require__(3);
 
@@ -672,7 +695,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    'use strict';
 
 	    var _ss     = __webpack_require__(2),
-	        _       = __webpack_require__(19),
+	        _       = __webpack_require__(22),
 	        error   = __webpack_require__(8);
 
 
@@ -750,7 +773,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	    var _ss      = __webpack_require__(2),
 	        T        = __webpack_require__(3),
-	        _        = __webpack_require__(19);
+	        _        = __webpack_require__(22);
 
 
 	    function _chebyshev(x,coeffs) {
@@ -786,7 +809,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    'use strict';
 
 	    var _ss       = __webpack_require__(2),
-	        _         = __webpack_require__(19),
+	        _         = __webpack_require__(22),
 	        error     = __webpack_require__(8),
 	        constant  = __webpack_require__(7),
 	        chebyshev = __webpack_require__(11);
@@ -1084,8 +1107,45 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	    'use strict';
 
+	    var _ss      = __webpack_require__(2),
+	        _        = __webpack_require__(22);
+
+
+	    function _evaluatePolynomial(x,coeffs) {
+	        if(coeffs.length == 0) return 0;
+
+	        return _ss.foldR1(coeffs, function (a,r) {
+	            return a + r*x;
+	        });
+	    }
+	    exports.evaluatePolynomial = _evaluatePolynomial;
+
+
+	    function _evaluateEvenPolynomial (x,coeffs) {
+	        return _evaluatePolynomial(x*x,coeffs);
+	    }
+	    exports.evaluateEvenPolynomial = _evaluateEvenPolynomial;
+
+
+	    function _evaluateOddPolynomial (x,coeffs) {
+	        return x * evaluatePolynomial(x*x,coeffs);
+	    }
+	    exports.evaluateOddPolynomial = _evaluateOddPolynomial;
+
+
+	}).call(this);
+
+
+/***/ },
+/* 15 */
+/***/ function(module, exports, __webpack_require__) {
+
+	(function () {
+
+	    'use strict';
+
 	    var _ss       = __webpack_require__(2),
-	        _         = __webpack_require__(19),
+	        _         = __webpack_require__(22),
 	        error     = __webpack_require__(8),
 	        constant  = __webpack_require__(7),
 	        gamma     = __webpack_require__(12),
@@ -1204,7 +1264,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 15 */
+/* 16 */
 /***/ function(module, exports, __webpack_require__) {
 
 	(function () {
@@ -1226,7 +1286,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 16 */
+/* 17 */
 /***/ function(module, exports, __webpack_require__) {
 
 	(function () {
@@ -1234,7 +1294,102 @@ return /******/ (function(modules) { // webpackBootstrap
 	    'use strict';
 
 	    var _ss      = __webpack_require__(2),
-	        _        = __webpack_require__(19),
+	        number   = __webpack_require__(4),
+	        _        = __webpack_require__(22),
+	        polyn    = __webpack_require__(14),
+	        gamma    = __webpack_require__(12),
+	        constant = __webpack_require__(7);
+
+
+	    function _factorial (n) {
+	        if(n < 0) throw new Error("factorial: negative input");
+
+	        if(n <= 1) return 1;
+
+	        if(n <= 170) {
+	            var seed = 1;
+	            for (var i = 2; i < n+1; i++) {
+	                seed *= i;
+	            };
+	            return seed;
+	        }
+
+	        return Infinity;
+	    }
+	    exports.factorial = _factorial;
+
+
+	    function _logFactorial(n) {
+	        if(n < 0) throw new Error("logFactorial: negative input");
+
+	        if(n <= 14) return Math.log(_factorial(n));
+
+	        var x = n + 1,
+	            y = 1 / (x * x),
+	            z = ((-(5.95238095238e-4 * y) + 7.936500793651e-4) * y -
+	                   2.7777777777778e-3) * y + 8.3333333333333e-2;
+
+	        return (x - 0.5) * Math.log(x) - x + 9.1893853320467e-1 + z / x;
+	    }
+	    exports.logFactorial = _logFactorial;
+
+
+	    var sfe = [ 0.0,
+	                0.1534264097200273452913848,   0.0810614667953272582196702,
+	                0.0548141210519176538961390,   0.0413406959554092940938221,
+	                0.03316287351993628748511048,  0.02767792568499833914878929,
+	                0.02374616365629749597132920,  0.02079067210376509311152277,
+	                0.01848845053267318523077934,  0.01664469118982119216319487,
+	                0.01513497322191737887351255,  0.01387612882307074799874573,
+	                0.01281046524292022692424986,  0.01189670994589177009505572,
+	                0.01110455975820691732662991,  0.010411265261972096497478567,
+	                0.009799416126158803298389475, 0.009255462182712732917728637,
+	                0.008768700134139385462952823, 0.008330563433362871256469318,
+	                0.007934114564314020547248100, 0.007573675487951840794972024,
+	                0.007244554301320383179543912, 0.006942840107209529865664152,
+	                0.006665247032707682442354394, 0.006408994188004207068439631,
+	                0.006171712263039457647532867, 0.005951370112758847735624416,
+	                0.005746216513010115682023589, 0.005554733551962801371038690 ];
+
+	    function _stirlingError(n) {
+	        if(n <= 15.0) {
+	            var pf = number.properFraction(n+n);
+
+	            if(pf.snd === 0) return sfe[i];
+	            return gamma.logGamma(n+1.0) - (n+0.5) * Math.log(n) + n -
+	                   constant.ln_sqrt_2_pi
+	        }
+
+	        var s0 = 0.083333333333333333333,
+	            s1 = 0.00277777777777777777778,
+	            s2 = 0.00079365079365079365079365,
+	            s3 = 0.000595238095238095238095238,
+	            s4 = 0.0008417508417508417508417508;
+
+	        if(n > 500) return polyn.evaluateOddPolynomial(1/n, [s0,-s1]);
+
+	        if(n > 80) return polyn.evaluateOddPolynomial(1/n, [s0,-s1,s2]);
+
+	        if(n > 35) return polyn.evaluateOddPolynomial(1/n, [s0,-s1,s2,-s3]);
+
+	        return polyn.evaluateOddPolynomial(1/n, [s0,-s1,s2,-s3,s4]);
+	    }
+	    exports.stirlingError = _stirlingError;
+
+
+	}).call(this);
+
+
+/***/ },
+/* 18 */
+/***/ function(module, exports, __webpack_require__) {
+
+	(function () {
+
+	    'use strict';
+
+	    var _ss      = __webpack_require__(2),
+	        _        = __webpack_require__(22),
 	        error    = __webpack_require__(8),
 	        constant = __webpack_require__(7);
 
@@ -1387,7 +1542,98 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 17 */
+/* 19 */
+/***/ function(module, exports, __webpack_require__) {
+
+	/*
+	 * there are 12 cars crossing a bridge per unit time t on average
+	 *
+	 * The probability of having 16 or less cars crossing the bridge in a particular interval t:
+	 * cumulative (poisson 12) 16
+	 * >> 0.8987089925601622
+	 *
+	 * The probability of having 17 or more cars crossing the bridge in a particular interval t:
+	 * complCumulative (poisson 12) 16
+	 * >> 0.10129100743983777
+	 *
+	 **/
+
+	(function () {
+
+	    'use strict';
+
+	    var _ss       = __webpack_require__(2),
+	        number    = __webpack_require__(4),
+	        _         = __webpack_require__(22),
+	        polyn     = __webpack_require__(14),
+	        gamma     = __webpack_require__(12),
+	        constant  = __webpack_require__(7),
+	        factorial = __webpack_require__(17);
+
+	    function _PD(lambda) {
+	        this.lambda = lambda;
+	    }
+
+
+	    function _poisson (lambda) {
+	        return new _PD(lambda);
+	    }
+	    exports.poisson = _poisson;
+
+
+	    function _cdf(distribution,x) {
+	        if( !(distribution instanceof _PD) ) {
+	            throw new Error(
+	                "statscript.distribution.poisson.cdf: " +
+	                "distribution parameter is not Poisson"
+	            );
+	        };
+
+	        // if @distribution is the only parameter
+	        // partially apply the cdf function to it
+	        if(_.isUndefined(x)) {
+	            return function (x) {
+	                if(x < 0) return 0;
+	                if(!isFinite(x)) return 1;
+	                if(isNaN(x)) throw new Error("statscript.distribution.poisson.cumulative: NaN input");
+	                return 1 - gamma.incompleteGamma((Math.floor(x) + 1), distribution.lambda);
+	            };
+	        }
+
+	        if(x < 0) return 0;
+	        if(!isFinite(x)) return 1;
+	        if(isNaN(x)) throw new Error("statscript.distribution.poisson.cumulative: NaN input");
+	        return 1 - gamma.incompleteGamma((Math.floor(x) + 1), distribution.lambda);
+	    }
+	    exports.cdf = _cdf;
+
+
+	    function _complCdf(distribution,x) {
+	        if( !(distribution instanceof _PD) ) {
+	            throw new Error(
+	                "statscript.distribution.poisson.complCdf: " +
+	                "distribution parameter is not Poisson"
+	            );
+	        };
+
+	        // if @distribution is the only parameter
+	        // partially apply the cdf function to it
+	        if(_.isUndefined(x)) {
+	            return function (x) {
+	                return 1 - _cdf(distribution, x);
+	            };
+	        }
+
+	        return 1 - _cdf(distribution,x);
+	    }
+	    exports.complCdf = _complCdf;
+
+
+	}).call(this);
+
+
+/***/ },
+/* 20 */
 /***/ function(module, exports, __webpack_require__) {
 
 	(function () {
@@ -1396,7 +1642,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	    var T        = __webpack_require__(3),
 	        _ss      = __webpack_require__(2),
-	        _        = __webpack_require__(19),
+	        _        = __webpack_require__(22),
 	        kbn      = __webpack_require__(9);
 
 
@@ -1506,7 +1752,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 18 */
+/* 21 */
 /***/ function(module, exports, __webpack_require__) {
 
 	(function () {
@@ -1515,7 +1761,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	    var T        = __webpack_require__(3),
 	        _ss      = __webpack_require__(2),
-	        _        = __webpack_require__(19),
+	        _        = __webpack_require__(22),
 	        constant = __webpack_require__(7);
 
 
@@ -1580,7 +1826,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 19 */
+/* 22 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;//     Underscore.js 1.7.0
