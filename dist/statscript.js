@@ -2,7 +2,7 @@
  * statscript.js
  *
  * @version 0.0.0
- * @date    2014-11-28
+ * @date    2014-11-29
  *
  * @license
  * Copyright (C) 2014 Michael Rogowski <michaeljrogowski@gmail.com>
@@ -146,1399 +146,1431 @@ return /******/ (function(modules) { // webpackBootstrap
 /* 2 */
 /***/ function(module, exports, __webpack_require__) {
 
-	(function () {
-	    'use strict';
+	
+	'use strict';
 
-	    var _ = __webpack_require__(22);
-	    var T = __webpack_require__(3);
+	var _ = __webpack_require__(22),
+	    T = __webpack_require__(3);
 
-	    //(a -> a -> a) -> [a] -> a
-	    function _foldR1 (ls, fn) {
-	        if(ls.length == 0) throw new Error('foldr1: empty list');
+	//(a -> a -> a) -> [a] -> a
+	function _foldR1 (ls, fn) {
+	    if(ls.length == 0) throw new Error('foldr1: empty list');
 
-	        var acc = ls[0];
-	        for (var i = 1; i < ls.length; i++) {
-	            acc = fn( ls[i], acc );
-	        };
-	        return acc;
-	    }
-	    exports.foldR1 = _foldR1;
+	    var acc = ls[0];
+	    for (var i = 1; i < ls.length; i++) {
+	        acc = fn( ls[i], acc );
+	    };
+	    return acc;
+	}
+	exports.foldR1 = _foldR1;
 
-	    //(a -> b -> b) -> b -> [a] -> b
-	    function _foldR (seed, ls, fn) {
-	        var acc = seed;
-	        for (var i = 0; i < ls.length; i++) {
-	            acc = fn( ls[i], acc );
-	        };
-	        return acc;
-	    }
-	    exports.foldR = _foldR;
-
-
-	    function _foldL (seed, ls, fn) {
-	        var acc = seed;
-	        for (var i = 0; i < ls.length; i++) {
-	            acc = fn( acc, ls[i] );
-	        };
-	        return acc;
-	    }
-	    exports.foldL = _foldL;
+	//(a -> b -> b) -> b -> [a] -> b
+	function _foldR (seed, ls, fn) {
+	    var acc = seed;
+	    for (var i = 0; i < ls.length; i++) {
+	        acc = fn( ls[i], acc );
+	    };
+	    return acc;
+	}
+	exports.foldR = _foldR;
 
 
-	    function _unfoldr (seed, generate) {
-	        var s = seed, accum = [], safety = 35000;
+	function _foldL (seed, ls, fn) {
+	    var acc = seed;
+	    for (var i = 0; i < ls.length; i++) {
+	        acc = fn( acc, ls[i] );
+	    };
+	    return acc;
+	}
+	exports.foldL = _foldL;
 
-	        while(safety > 0) {
-	            var res = generate(s);
-	            if(_.isEmpty(res)) { break; }
-	            else {
-	              accum.push(res.fst);
-	              s = res.snd;
-	            }
-	            safety--;
+
+	function _unfoldr (seed, generate) {
+	    var s = seed, accum = [], safety = 35000;
+
+	    while(safety > 0) {
+	        var res = generate(s);
+	        if(_.isEmpty(res)) { break; }
+	        else {
+	          accum.push(res.fst);
+	          s = res.snd;
 	        }
-	        return accum;
+	        safety--;
 	    }
-	    exports.unfoldr = _unfoldr;
+	    return accum;
+	}
+	exports.unfoldr = _unfoldr;
 
 
-	    function _unfoldrN (n, seed, generate) {
-	        var s = seed, accum = [], safety = 35000, idx = 0;
+	function _unfoldrN (n, seed, generate) {
+	    var s = seed, accum = [], safety = 35000, idx = 0;
 
-	        while(idx < n && safety > 0) {
-	            var res = generate(s);
-	            if(_.isEmpty(res)) { break; }
-	            else {
-	              accum.push(res.fst);
-	              s = res.snd;
-	            }
-	            safety--;
-	            idx++;
+	    while(idx < n && safety > 0) {
+	        var res = generate(s);
+	        if(_.isEmpty(res)) { break; }
+	        else {
+	          accum.push(res.fst);
+	          s = res.snd;
 	        }
-	        return accum;
+	        safety--;
+	        idx++;
 	    }
-	    exports.unfoldrN = _unfoldrN;
+	    return accum;
+	}
+	exports.unfoldrN = _unfoldrN;
 
 
-	    function _zipWith (xs, ys, fn) {
-	        var longerList = xs.length > ys.length ? ys : xs,
-	            accum = [];
-	        for (var i = 0; i < longerList.length; i++) {
-	            accum.push( fn( xs[i],ys[i] ) );
-	        };
-	        return accum;
-	    }
-	    exports.zipWith = _zipWith;
+	function _zipWith (xs, ys, fn) {
+	    var longerList = xs.length > ys.length ? ys : xs,
+	        accum = [];
+	    for (var i = 0; i < longerList.length; i++) {
+	        accum.push( fn( xs[i],ys[i] ) );
+	    };
+	    return accum;
+	}
+	exports.zipWith = _zipWith;
 
 
-	    function _replicate(n, a) {
-	        var accum = [];
-	        for (var i = 0; i < n; i++) {
-	            accum.push(a);
-	        };
-	        return accum;
-	    }
-	    exports.replicate = _replicate;
+	function _replicate(n, a) {
+	    var accum = [];
+	    for (var i = 0; i < n; i++) {
+	        accum.push(a);
+	    };
+	    return accum;
+	}
+	exports.replicate = _replicate;
 
 
-	    function _generate(n, fn) {
-	        var accum = [];
-	        for (var i = 0; i < n; i++) {
-	            accum.push(fn(i));
-	        };
-	        return accum;
-	    }
-	    exports.generate = _generate;
+	function _generate(n, fn) {
+	    var accum = [];
+	    for (var i = 0; i < n; i++) {
+	        accum.push(fn(i));
+	    };
+	    return accum;
+	}
+	exports.generate = _generate;
 
 
-	    function _sum (ls) {
-	        var accum = 0;
-	        for (var i = 0; i < ls.length; i++) {
-	            accum += ls[i];
-	        };
-	        return accum;
-	    }
-	    exports.sum = _sum;
+	function _sum (ls) {
+	    var accum = 0;
+	    for (var i = 0; i < ls.length; i++) {
+	        accum += ls[i];
+	    };
+	    return accum;
+	}
+	exports.sum = _sum;
 
-	}).call(this);
+
 
 
 /***/ },
 /* 3 */
 /***/ function(module, exports, __webpack_require__) {
 
-	(function () {
+	'use strict';
 
-	    'use strict';
-
-	    function _Tuple (fst,snd) {
-	        this.fst = fst;
-	        this.snd = snd;
-	    }
-	    exports.Tuple = _Tuple;
+	function _Tuple (fst,snd) {
+	    this.fst = fst;
+	    this.snd = snd;
+	}
+	exports.Tuple = _Tuple;
 
 
-	    function _Triple (fst,snd,trd) {
-	        this.fst = fst;
-	        this.snd = snd;
-	        this.trd = trd;
-	    }
-	    exports.Triple = _Triple;
+	function _Triple (fst,snd,trd) {
+	    this.fst = fst;
+	    this.snd = snd;
+	    this.trd = trd;
+	}
+	exports.Triple = _Triple;
 
 
-	    function _clone (t) {
-	        return new _Tuple(t.fst,t.snd);
-	    }
-	    exports.clone = _clone;
-
-
-	}).call(this);
-
+	function _clone (t) {
+	    return new _Tuple(t.fst,t.snd);
+	}
+	exports.clone = _clone;
 
 /***/ },
 /* 4 */
 /***/ function(module, exports, __webpack_require__) {
 
-	(function () {
+	'use strict';
 
-	    'use strict';
-
-	    var T        = __webpack_require__(3),
-	        _        = __webpack_require__(22);
+	var T        = __webpack_require__(3),
+	    _        = __webpack_require__(22);
 
 
-	    function _sign (x) {
-	        if(x > 0) return 1;
+	function _sign (x) {
+	    if(x > 0) return 1;
 
-	        if(x < 0) return -1;
+	    if(x < 0) return -1;
 
-	        if(x === 0) return 0;
+	    if(x === 0) return 0;
+	}
+
+
+	function _even (x) {
+	    return x % 2 === 0;
+	}
+	exports.even = _even;
+
+
+	function _odd (x) {
+	    return x % 2 === 1;
+	}
+	exports.odd = _odd;
+
+
+	// takes a real fractional number x and returns a pair (n,f) such that x = n+f
+	function _properFraction(x) {
+
+	    if(isNaN(x)) return NaN;
+
+	    var sign = Math.sign(x), abs_x = Math.abs(x);
+
+	    var str_x = abs_x+'';
+
+	    if(!_.contains(str_x,'.')){
+	        return new T.Tuple(sign*parseInt(str_x),0.0);
 	    }
-
-	    // takes a real fractional number x and returns a pair (n,f) such that x = n+f
-	    function _properFraction(x) {
-
-	        if(isNaN(x)) return NaN;
-
-	        var sign = Math.sign(x), abs_x = Math.abs(x);
-
-	        var str_x = abs_x+'';
-
-	        if(!_.contains(str_x,'.')){
-	            return new T.Tuple(sign*parseInt(str_x),0.0);
+	    else {
+	        if(str_x[0] === '.') {
+	            str_x = '0'+str_x;
+	            return new T.Tuple(0,sign*parseFloat(str_x));
 	        }
-	        else {
-	            if(str_x[0] === '.') {
-	                str_x = '0'+str_x;
-	                return new T.Tuple(0,sign*parseFloat(str_x));
-	            }
 
-	            var splt = str_x.split('.'),
-	                intpart = parseInt(splt[0]),
-	                fractpart = parseFloat('0.'+splt[1]),
-	                intres = intpart === 0 ? 0 : sign*intpart,
-	                fracres = fractpart === 0 ? 0 : sign*fractpart;
+	        var splt = str_x.split('.'),
+	            intpart = parseInt(splt[0]),
+	            fractpart = parseFloat('0.'+splt[1]),
+	            intres = intpart === 0 ? 0 : sign*intpart,
+	            fracres = fractpart === 0 ? 0 : sign*fractpart;
 
-	            return new T.Tuple(intres,fracres);
-	        }
+	        return new T.Tuple(intres,fracres);
 	    }
-	    exports.properFraction = _properFraction;
+	}
+	exports.properFraction = _properFraction;
 
 
-	    function _bd0(x,np) {
-	        if(!isFinite(x) || !isFinite(np) || np === 0) return NaN;
+	function _bd0(x,np) {
+	    if(!isFinite(x) || !isFinite(np) || np === 0) return NaN;
 
-	        if(Math.abs(x_np) >= 0.1 * (x+np)) return x * Math.log(x/np) - x_np;
+	    if(Math.abs(x_np) >= 0.1 * (x+np)) return x * Math.log(x/np) - x_np;
 
-	        var x_np = x - np, v = x_np / (x + np), s0 = x_np * v, ej0  = 2*x*v, vv = v*v;
+	    var x_np = x - np, v = x_np / (x + np), s0 = x_np * v, ej0  = 2*x*v, vv = v*v;
 
-	        var j = 1, ej = ej0*vv, s = s0;
+	    var j = 1, ej = ej0*vv, s = s0;
 
-	        while(true) {
-	            var s1 = s + ej/(2*j+1);
-	            if(s1 == s) return s1;
+	    while(true) {
+	        var s1 = s + ej/(2*j+1);
+	        if(s1 == s) return s1;
 
-	            j = j+1;
-	            ej = ej*vv;
-	            s = s1;
-	        }
+	        j = j+1;
+	        ej = ej*vv;
+	        s = s1;
 	    }
-	    exports.bd0 = _bd0;
-
-	}).call(this);
-
+	}
+	exports.bd0 = _bd0;
 
 /***/ },
 /* 5 */
 /***/ function(module, exports, __webpack_require__) {
 
-	(function () {
+	
 
-	    'use strict';
+	'use strict';
 
-	    function _uniform_Float () {
-	        return Math.random(0,1);
-	    }
-	    exports.uniform_Float = _uniform_Float;
-
-
-	    function _uniformR_Float (min,max) {
-	        return Math.random(min,max);
-	    }
-	    exports.uniformR_Float = _uniformR_Float;
+	function _uniform_Float () {
+	    return Math.random(0,1);
+	}
+	exports.uniform_Float = _uniform_Float;
 
 
-	    function _uniform_Word32 () {
-	        // 2147483647 is the highest integer in 32 bits
-	        return Math.floor(Math.random(0,1) * 2147483647);
-	    }
-	    exports.uniform_Word32 = _uniform_Word32;
+	function _uniformR_Float (min,max) {
+	    return Math.random(min,max);
+	}
+	exports.uniformR_Float = _uniformR_Float;
 
 
-	}).call(this);
+	function _uniform_Word32 () {
+	    // 2147483647 is the highest integer in 32 bits
+	    return Math.floor(Math.random(0,1) * 2147483647);
+	}
+	exports.uniform_Word32 = _uniform_Word32;
+
+
+
 
 
 /***/ },
 /* 6 */
 /***/ function(module, exports, __webpack_require__) {
 
-	(function () {
+	
 
-	    'use strict';
+	'use strict';
 
-	    var _ss     = __webpack_require__(2),
-	        _       = __webpack_require__(22),
-	        uniform = __webpack_require__(5),
-	        T       = __webpack_require__(3);
-
-
-	    var rNorm = 3.442619855899,
-	        blocks_v = 0.00991256303526217,
-	        blocks_f = Math.exp(-0.5 * rNorm * rNorm);
+	var _ss     = __webpack_require__(2),
+	    _       = __webpack_require__(22),
+	    uniform = __webpack_require__(5),
+	    T       = __webpack_require__(3);
 
 
-	    var _blocks_ls = (function () {
-	        var seed = new T.Tuple( rNorm, blocks_f ),
-	            unfoldResult = _ss.unfoldrN( 126, seed, function (s) {
-	                var b = s.fst,
-	                    g = s.snd,
-	                    h = Math.sqrt( -2 * Math.log( (blocks_v / b) + g ) ),
-	                    u = new T.Tuple(h, Math.exp( -0.5 * h * h ) );
-
-	                return new T.Tuple( h, u );
-	            } );
-
-	        unfoldResult.unshift(rNorm);
-	        unfoldResult.unshift(blocks_v/blocks_f);
-	        unfoldResult.push(0);
-
-	        return unfoldResult;
-	    })();
-	    exports.blocks = _blocks_ls;
+	var rNorm = 3.442619855899,
+	    blocks_v = 0.00991256303526217,
+	    blocks_f = Math.exp(-0.5 * rNorm * rNorm);
 
 
-	    var _ratios_ls = (function () {
-	        return _ss.zipWith(_.rest(_blocks_ls), _blocks_ls, function (a,b) {
-	            return a / b;
-	        });
-	    })();
-	    exports.ratios = _ratios_ls;
+	var _blocks_ls = (function () {
+	    var seed = new T.Tuple( rNorm, blocks_f ),
+	        unfoldResult = _ss.unfoldrN( 126, seed, function (s) {
+	            var b = s.fst,
+	                g = s.snd,
+	                h = Math.sqrt( -2 * Math.log( (blocks_v / b) + g ) ),
+	                u = new T.Tuple(h, Math.exp( -0.5 * h * h ) );
+
+	            return new T.Tuple( h, u );
+	        } );
+
+	    unfoldResult.unshift(rNorm);
+	    unfoldResult.unshift(blocks_v/blocks_f);
+	    unfoldResult.push(0);
+
+	    return unfoldResult;
+	})();
+	exports.blocks = _blocks_ls;
 
 
-	    function _normalTail (cond) {
-	        while(true) {
-	            var x = Math.log(uniform.uniform_Float()) / rNorm,
-	                y = Math.log(uniform.uniform_Float())
+	var _ratios_ls = (function () {
+	    return _ss.zipWith(_.rest(_blocks_ls), _blocks_ls, function (a,b) {
+	        return a / b;
+	    });
+	})();
+	exports.ratios = _ratios_ls;
 
-	            if(!(y * -2 < x*x)) return (cond ? x - rNorm : rNorm - x);
-	        }
+
+	function _normalTail (cond) {
+	    while(true) {
+	        var x = Math.log(uniform.uniform_Float()) / rNorm,
+	            y = Math.log(uniform.uniform_Float())
+
+	        if(!(y * -2 < x*x)) return (cond ? x - rNorm : rNorm - x);
 	    }
+	}
 
 
-	    function _standard () {
-	        while(true) {
-	            var u = (uniform.uniform_Float() * 2) - 1,
-	                i = (uniform.uniform_Word32 & 127),
-	                block_i = _blocks_ls[i],
-	                block_j = _blocks_ls[i+1];
+	function _standard () {
+	    while(true) {
+	        var u = (uniform.uniform_Float() * 2) - 1,
+	            i = (uniform.uniform_Word32 & 127),
+	            block_i = _blocks_ls[i],
+	            block_j = _blocks_ls[i+1];
 
-	            if(Math.abs(u) < _ratios_ls[i]) return u * block_i;
+	        if(Math.abs(u) < _ratios_ls[i]) return u * block_i;
 
-	            if(i == 0) return _normalTail(u < 0);
+	        if(i == 0) return _normalTail(u < 0);
 
-	            var x = u * block_i,
-	                xx = x * x,
-	                d = Math.exp(-0.5 * (block_i * block_i - xx)),
-	                e = Math.exp(-0.5 * (block_j * block_j - xx)),
-	                c = uniform.uniform_Float();
+	        var x = u * block_i,
+	            xx = x * x,
+	            d = Math.exp(-0.5 * (block_i * block_i - xx)),
+	            e = Math.exp(-0.5 * (block_j * block_j - xx)),
+	            c = uniform.uniform_Float();
 
-	            if(e+c*(d-e) < 1) return x;
-	        }
+	        if(e+c*(d-e) < 1) return x;
 	    }
-	    exports.standard = _standard;
+	}
+	exports.standard = _standard;
 
 
-	}).call(this);
+
 
 
 /***/ },
 /* 7 */
 /***/ function(module, exports, __webpack_require__) {
 
-	(function () {
+	
 
-	    'use strict';
-
-
-	    exports.sqrt_2 = 1.4142135623730950488016887242096980785696718753769480731766;
+	'use strict';
 
 
-	    exports.sqrt_2_pi = 2.5066282746310005024157652848110452530069867406099383166299;
+	exports.sqrt_2 = 1.4142135623730950488016887242096980785696718753769480731766;
 
 
-	    exports.tiny = 2.2250738585072014e-308;
+	exports.sqrt_2_pi = 2.5066282746310005024157652848110452530069867406099383166299;
 
 
-	    exports.m_eulerMascheroni = 0.5772156649015328606065121;
+	exports.tiny = 2.2250738585072014e-308;
 
 
-	    exports.ln_sqrt_2_pi = 0.9189385332046727417803297364056176398613974736377834128171;
+	exports.m_eulerMascheroni = 0.5772156649015328606065121;
 
 
-	    // Coefficients for 18-point Gauss-Legendre integration. They are
-	    // used in implementation of incomplete gamma and beta functions.
-	    exports.coefW = [ 0.0055657196642445571, 0.012915947284065419, 0.020181515297735382
-	                    , 0.027298621498568734,  0.034213810770299537, 0.040875750923643261
-	                    , 0.047235083490265582,  0.053244713977759692, 0.058860144245324798
-	                    , 0.064039797355015485,  0.068745323835736408, 0.072941885005653087
-	                    , 0.076598410645870640,  0.079687828912071670, 0.082187266704339706
-	                    , 0.084078218979661945,  0.085346685739338721, 0.085983275670394821
-	                    ];
+	exports.ln_sqrt_2_pi = 0.9189385332046727417803297364056176398613974736377834128171;
 
 
-	    exports.coefY = [ 0.0021695375159141994, 0.011413521097787704, 0.027972308950302116
-	                    , 0.051727015600492421,  0.082502225484340941, 0.12007019910960293
-	                    , 0.16415283300752470,   0.21442376986779355,  0.27051082840644336
-	                    , 0.33199876341447887,   0.39843234186401943,  0.46931971407375483
-	                    , 0.54413605556657973,   0.62232745288031077,  0.70331500465597174
-	                    , 0.78649910768313447,   0.87126389619061517,  0.95698180152629142
-	                    ];
-	}).call(this);
+	// Coefficients for 18-point Gauss-Legendre integration. They are
+	// used in implementation of incomplete gamma and beta functions.
+	exports.coefW = [ 0.0055657196642445571, 0.012915947284065419, 0.020181515297735382
+	                , 0.027298621498568734,  0.034213810770299537, 0.040875750923643261
+	                , 0.047235083490265582,  0.053244713977759692, 0.058860144245324798
+	                , 0.064039797355015485,  0.068745323835736408, 0.072941885005653087
+	                , 0.076598410645870640,  0.079687828912071670, 0.082187266704339706
+	                , 0.084078218979661945,  0.085346685739338721, 0.085983275670394821
+	                ];
+
+
+	exports.coefY = [ 0.0021695375159141994, 0.011413521097787704, 0.027972308950302116
+	                , 0.051727015600492421,  0.082502225484340941, 0.12007019910960293
+	                , 0.16415283300752470,   0.21442376986779355,  0.27051082840644336
+	                , 0.33199876341447887,   0.39843234186401943,  0.46931971407375483
+	                , 0.54413605556657973,   0.62232745288031077,  0.70331500465597174
+	                , 0.78649910768313447,   0.87126389619061517,  0.95698180152629142
+	                ];
+
 
 
 /***/ },
 /* 8 */
 /***/ function(module, exports, __webpack_require__) {
 
-	(function () {
+	
 
-	    'use strict';
+	'use strict';
 
 
-	    // error function.
-	    // taken from http://www.johndcook.com/cpp_erf.html
-	    function _erf(x) {
-	        var a1 =  0.254829592;
-	        var a2 = -0.284496736;
-	        var a3 =  1.421413741;
-	        var a4 = -1.453152027;
-	        var a5 =  1.061405429;
-	        var p  =  0.3275911;
+	// error function.
+	// taken from http://www.johndcook.com/cpp_erf.html
+	function _erf(x) {
+	    var a1 =  0.254829592;
+	    var a2 = -0.284496736;
+	    var a3 =  1.421413741;
+	    var a4 = -1.453152027;
+	    var a5 =  1.061405429;
+	    var p  =  0.3275911;
 
-	        // Save the sign of x
-	        var sign = 1;
-	        if (x < 0)
-	            sign = -1;
+	    // Save the sign of x
+	    var sign = 1;
+	    if (x < 0)
+	        sign = -1;
 
-	        x = Math.abs(x);
+	    x = Math.abs(x);
 
-	        // A&S formula 7.1.26
-	        var t = 1.0/(1.0 + p*x);
-	        var y = 1.0 - (((((a5*t + a4)*t) + a3)*t + a2)*t + a1)*t*Math.exp(-x*x);
+	    // A&S formula 7.1.26
+	    var t = 1.0/(1.0 + p*x);
+	    var y = 1.0 - (((((a5*t + a4)*t) + a3)*t + a2)*t + a1)*t*Math.exp(-x*x);
 
-	        return sign*y;
+	    return sign*y;
+	}
+	exports.erf = _erf;
+
+
+	function _erfc (x) {
+	    return 1 - _erf(x);
+	}
+	exports.erfc = _erfc;
+
+
+	function _invErfc(p) {
+	    if(p === 2) return -Infinity;
+	    if(p === 0) return Infinity;
+
+	    if(p > 0 && p < 2) {
+	        var pp = p <= 1 ? p : (2 - p);
+	        var t = Math.sqrt(-2 * Math.log( 0.5 * pp ));
+	        var x0 = -0.70711 * ((2.30753 + t * 0.27061) / (1 + t * (0.99229 + t * 0.04481)) - t);
+
+	        var loop = function (j,x) {
+	            if(j >= 2) return x;
+	            else {
+	                var err = _erfc(x) - pp,
+	                    x1 = x + err / (1.12837916709551257 * Math.exp(-x * x) - x * err);
+	                return loop(j+1, x1);
+	            }
+	        };
+
+	        if(p <= 1) return loop(0,x0);
+
+	        return -loop(0,x0);
 	    }
-	    exports.erf = _erf;
+
+	    throw new Error("invErfc: p must be in [0,2]");
+	}
+	exports.invErfc = _invErfc;
 
 
-	    function _erfc (x) {
-	        return 1 - _erf(x);
+	// mikolalysenko: https://www.npmjs.org/package/almost-equal
+	function _within (a,b) {
+	    var FLT_EPSILON = 1.19209290e-7,
+	        absoluteError = FLT_EPSILON,
+	        relativeError = FLT_EPSILON,
+	        d = Math.abs(a - b);
+
+	    if(d <= absoluteError) {
+	        return true
 	    }
-	    exports.erfc = _erfc;
-
-
-	    function _invErfc(p) {
-	        if(p === 2) return -Infinity;
-	        if(p === 0) return Infinity;
-
-	        if(p > 0 && p < 2) {
-	            var pp = p <= 1 ? p : (2 - p);
-	            var t = Math.sqrt(-2 * Math.log( 0.5 * pp ));
-	            var x0 = -0.70711 * ((2.30753 + t * 0.27061) / (1 + t * (0.99229 + t * 0.04481)) - t);
-
-	            var loop = function (j,x) {
-	                if(j >= 2) return x;
-	                else {
-	                    var err = _erfc(x) - pp,
-	                        x1 = x + err / (1.12837916709551257 * Math.exp(-x * x) - x * err);
-	                    return loop(j+1, x1);
-	                }
-	            };
-
-	            if(p <= 1) return loop(0,x0);
-
-	            return -loop(0,x0);
-	        }
-
-	        throw new Error("invErfc: p must be in [0,2]");
+	    if(d <= relativeError * Math.min(Math.abs(a), Math.abs(b))) {
+	        return true
 	    }
-	    exports.invErfc = _invErfc;
+	    return a === b
+	}
+	exports.within = _within;
 
 
-	    // mikolalysenko: https://www.npmjs.org/package/almost-equal
-	    function _within (a,b) {
-	        var FLT_EPSILON = 1.19209290e-7,
-	            absoluteError = FLT_EPSILON,
-	            relativeError = FLT_EPSILON,
-	            d = Math.abs(a - b);
 
-	        if(d <= absoluteError) {
-	            return true
-	        }
-	        if(d <= relativeError * Math.min(Math.abs(a), Math.abs(b))) {
-	            return true
-	        }
-	        return a === b
-	    }
-	    exports.within = _within;
-
-
-	}).call(this);
 
 
 /***/ },
 /* 9 */
 /***/ function(module, exports, __webpack_require__) {
 
-	(function () {
+	
 
-	    'use strict';
+	'use strict';
 
-	    var _ss     = __webpack_require__(2);
+	var _ss     = __webpack_require__(2);
 
 
-	    function _Kbn (sum, c) {
-	        this.sum = sum;
-	        this.c = c;
+	function _Kbn (sum, c) {
+	    this.sum = sum;
+	    this.c = c;
+	}
+
+
+	function _kbnAddInternal (kbn_orig, x) {
+	    var c_orig = kbn_orig.c, sum_orig = kbn_orig.sum;
+
+	    var sum2 = sum_orig + c_orig;
+	    var c2 = null;
+
+	    if( Math.abs( sum_orig ) >= Math.abs( x ) )
+	        c2 = c_orig + ( ( sum_orig - sum2 ) + x );
+
+	    else
+	        c2 = c_orig + ( ( x - sum2 ) + sum_orig );
+
+
+	    return new _Kbn( sum2, c2 );
+	}
+
+
+	// public api
+
+	function _zero () {
+	    return new _Kbn(0,0);
+	}
+	exports.zero = _zero;
+
+
+	function _add (kbn, a) {
+
+	    if( !(kbn instanceof _Kbn) ) {
+	        throw new Error(
+	            "statscript.numeric.kbn.add: " +
+	            "kbn parameter is not of type KBN"
+	        );
 	    }
 
-
-	    function _kbnAddInternal (kbn_orig, x) {
-	        var c_orig = kbn_orig.c, sum_orig = kbn_orig.sum;
-
-	        var sum2 = sum_orig + c_orig;
-	        var c2 = null;
-
-	        if( Math.abs( sum_orig ) >= Math.abs( x ) )
-	            c2 = c_orig + ( ( sum_orig - sum2 ) + x );
-
-	        else
-	            c2 = c_orig + ( ( x - sum2 ) + sum_orig );
+	    return _kbnAddInternal( kbn, a );
+	}
+	exports.add = _add;
 
 
-	        return new _Kbn( sum2, c2 );
-	    }
+	function _sum (ls,fn) {
+	    return fn( _ss.foldL( _zero(), ls, _add ) );
+	}
+	exports.sum = _sum;
 
 
-	    // public api
-
-	    function _zero () {
-	        return new _Kbn(0,0);
-	    }
-	    exports.zero = _zero;
+	function _unpack (obj) {
+	    return obj.sum + obj.c;
+	}
+	exports.unpack = _unpack;
 
 
-	    function _add (kbn, a) {
-
-	        if( !(kbn instanceof _Kbn) ) {
-	            throw new Error(
-	                "statscript.numeric.kbn.add: " +
-	                "kbn parameter is not of type KBN"
-	            );
-	        }
-
-	        return _kbnAddInternal( kbn, a );
-	    }
-	    exports.add = _add;
-
-
-	    function _sum (ls,fn) {
-	        return fn( _ss.foldL( _zero(), ls, _add ) );
-	    }
-	    exports.sum = _sum;
-
-
-	    function _unpack (obj) {
-	        return obj.sum + obj.c;
-	    }
-	    exports.unpack = _unpack;
-
-	}).call(this);
 
 
 /***/ },
 /* 10 */
 /***/ function(module, exports, __webpack_require__) {
 
-	(function () {
+	
 
-	    'use strict';
+	'use strict';
 
-	    var _ss     = __webpack_require__(2),
-	        _       = __webpack_require__(22),
-	        error   = __webpack_require__(8);
+	var _ss     = __webpack_require__(2),
+	    _       = __webpack_require__(22),
+	    error   = __webpack_require__(8);
 
 
-	    function _RootResult(a) {
-	        this.notBracketed = false;
-	        this.searchFailed = _.isUndefined(a) ? true : false;
-	        this.root = _.isUndefined(a) ? void 0 : a;
+	function _RootResult(a) {
+	    this.notBracketed = false;
+	    this.searchFailed = _.isUndefined(a) ? true : false;
+	    this.root = _.isUndefined(a) ? void 0 : a;
+	}
+
+
+	function ridders (tolerance,f_main,a,fa,b,fb,i) {
+	    var d    = Math.abs(b - a),
+	        dm   = (b - a) * 0.5,
+	        m   = a + dm,
+	        fm  = f_main(m),
+	        dn  = Math.sign(fb - fa) * dm * fm / Math.sqrt(fm*fm - fa*fb),
+	        n   = m - Math.sign(dn) * Math.min(Math.abs(dn), Math.abs(dm) - 0.5 * tolerance),
+	        fn  = f_main(n);
+
+	    if( error.within( a, b ) ) return new _RootResult(a);
+
+	    else if (fm === 0) return new _RootResult(m);
+
+	    else if (fn === 0) return new _RootResult(n);
+
+	    else if (d < tolerance) return new _RootResult(n);
+
+	    else if (i >= 100) return new _RootResult();
+
+	    else if(n === a || n === b) {
+	        if(fm*fa < 0) return ridders(tolerance,f_main,a,fa,m,fm,(i+1));
+
+	        else return ridders(tolerance,f_main,m,fm,b,fb,(i+1));
 	    }
 
+	    else if(fn*fm < 0) return ridders(tolerance,f_main,n,fn,m,fm,(i+1));
 
-	    function ridders (tolerance,f_main,a,fa,b,fb,i) {
-	        var d    = Math.abs(b - a),
-	            dm   = (b - a) * 0.5,
-	            m   = a + dm,
-	            fm  = f_main(m),
-	            dn  = Math.sign(fb - fa) * dm * fm / Math.sqrt(fm*fm - fa*fb),
-	            n   = m - Math.sign(dn) * Math.min(Math.abs(dn), Math.abs(dm) - 0.5 * tolerance),
-	            fn  = f_main(n);
+	    else if(fn*fa < 0) return ridders(tolerance,f_main,a,fa,n,fn,(i+1));
 
-	        if( error.within( a, b ) ) return new _RootResult(a);
+	    else return ridders(tolerance,f_main,n,fn,b,fb,(i+1));
+	}
 
-	        else if (fm === 0) return new _RootResult(m);
 
-	        else if (fn === 0) return new _RootResult(n);
 
-	        else if (d < tolerance) return new _RootResult(n);
+	// @tolerance: absolute error tolerance
+	// @lowbound: lower bound of search
+	// @highbound: upper bound of search
+	// @fn: function to find the roots of
+	function _root (tolerance, lowbound, highbound, fn) {
+	    var flo = fn(lowbound), fhi = fn(highbound);
+	    if(flo === 0) return new _RootResult(lowbound);
 
-	        else if (i >= 100) return new _RootResult();
+	    else if (fhi === 0) return new _RootResult(highbound);
 
-	        else if(n === a || n === b) {
-	            if(fm*fa < 0) return ridders(tolerance,f_main,a,fa,m,fm,(i+1));
-
-	            else return ridders(tolerance,f_main,m,fm,b,fb,(i+1));
-	        }
-
-	        else if(fn*fm < 0) return ridders(tolerance,f_main,n,fn,m,fm,(i+1));
-
-	        else if(fn*fa < 0) return ridders(tolerance,f_main,a,fa,n,fn,(i+1));
-
-	        else return ridders(tolerance,f_main,n,fn,b,fb,(i+1));
+	    else if (flo * fhi > 0) {
+	        var res = new _RootResult();
+	        res.notBracketed = true;
+	        return res;
 	    }
+	    else return ridders(tolerance, fn, lowbound, flo, highbound, fhi, 0);
+	}
+	exports.root = _root;
 
 
 
-	    // @tolerance: absolute error tolerance
-	    // @lowbound: lower bound of search
-	    // @highbound: upper bound of search
-	    // @fn: function to find the roots of
-	    function _root (tolerance, lowbound, highbound, fn) {
-	        var flo = fn(lowbound), fhi = fn(highbound);
-	        if(flo === 0) return new _RootResult(lowbound);
-
-	        else if (fhi === 0) return new _RootResult(highbound);
-
-	        else if (flo * fhi > 0) {
-	            var res = new _RootResult();
-	            res.notBracketed = true;
-	            return res;
-	        }
-	        else return ridders(tolerance, fn, lowbound, flo, highbound, fhi, 0);
-	    }
-	    exports.root = _root;
-
-
-	}).call(this);
 
 
 /***/ },
 /* 11 */
 /***/ function(module, exports, __webpack_require__) {
 
-	(function () {
+	
 
-	    'use strict';
+	'use strict';
 
-	    var _ss      = __webpack_require__(2),
-	        T        = __webpack_require__(3),
-	        _        = __webpack_require__(22);
-
-
-	    function _chebyshev(x,coeffs) {
-	        var tail = _.rest(coeffs),
-	            folded = _ss.foldR(new T.Tuple(0,0), tail, function (k,t) {
-	                var b0 = t.fst, b1 = t.snd;
-	                return new T.Tuple(k + (x*2) * b0 - b1, b0)
-	            });
-
-	        return _.first(coeffs) + x * folded.fst - folded.snd;
-	    }
-	    exports.chebyshev = _chebyshev;
+	var _ss      = __webpack_require__(2),
+	    T        = __webpack_require__(3),
+	    _        = __webpack_require__(22);
 
 
-	    function _chebyshevBroucke (x,coeffs) {
-	        var c = coeffs;
-	        c[0] = c[0]/2;
+	function _chebyshev(x,coeffs) {
+	    var tail = _.rest(coeffs),
+	        folded = _ss.foldR(new T.Tuple(0,0), tail, function (k,t) {
+	            var b0 = t.fst, b1 = t.snd;
+	            return new T.Tuple(k + (x*2) * b0 - b1, b0)
+	        });
 
-	        return _chebyshev(x,c);
-	    }
-	    exports.chebyshevBroucke = _chebyshevBroucke;
+	    return _.first(coeffs) + x * folded.fst - folded.snd;
+	}
+	exports.chebyshev = _chebyshev;
 
 
-	}).call(this);
+	function _chebyshevBroucke (x,coeffs) {
+	    var c = coeffs;
+	    c[0] = c[0]/2;
+
+	    return _chebyshev(x,c);
+	}
+	exports.chebyshevBroucke = _chebyshevBroucke;
+
+
+
 
 
 /***/ },
 /* 12 */
 /***/ function(module, exports, __webpack_require__) {
 
-	(function () {
+	
 
-	    'use strict';
+	'use strict';
 
-	    var _ss       = __webpack_require__(2),
-	        _         = __webpack_require__(22),
-	        error     = __webpack_require__(8),
-	        constant  = __webpack_require__(7),
-	        chebyshev = __webpack_require__(11);
-
-
-	    function _logGamma (x) {
-
-	        if(x <= 0) return Infinity;
-
-	        // Handle positive infinity. logGamma overflows before 1e308 so
-	        // it's safe
-	        if(x > 1e308) return Infinity;
+	var _ss       = __webpack_require__(2),
+	    _         = __webpack_require__(22),
+	    error     = __webpack_require__(8),
+	    constant  = __webpack_require__(7),
+	    chebyshev = __webpack_require__(11);
 
 
-	        var y = Math.log(x),
-	            alr2pi = 0.918938533204673,
-	            k = x * (y-1) - 0.5 * y + alr2pi,
-	            x1 = 1 / x,
-	            x2 = x1 * x1;
+	function _logGamma (x) {
+
+	    if(x <= 0) return Infinity;
+
+	    // Handle positive infinity. logGamma overflows before 1e308 so
+	    // it's safe
+	    if(x > 1e308) return Infinity;
 
 
-	        var a,b,c;
-	        if(x < 0.5) { a = -y; b = x+1; c = x; }
-	        else        { a = 0;  b = x;   c = x-1; }
+	    var y = Math.log(x),
+	        alr2pi = 0.918938533204673,
+	        k = x * (y-1) - 0.5 * y + alr2pi,
+	        x1 = 1 / x,
+	        x2 = x1 * x1;
 
 
-	        var r1_0 = -2.66685511495,    r1_1 = -24.4387534237,     r1_2 = -21.9698958928,
-	            r1_3 = 11.1667541262,     r1_4 = 3.13060547623,      r1_5 = 0.607771387771,
-	            r1_6 = 11.9400905721,     r1_7 = 31.4690115749,      r1_8 = 15.2346874070,
-	            r2_0 = -78.3359299449,    r2_1 = -142.046296688,     r2_2 = 137.519416416,
-	            r2_3 =  78.6994924154,    r2_4 = 4.16438922228,      r2_5 = 47.0668766060,
-	            r2_6 = 313.399215894,     r2_7 = 263.505074721,      r2_8 = 43.3400022514,
-	            r3_0 = -2.12159572323e5,  r3_1 = 2.30661510616e5,    r3_2 = 2.74647644705e4,
-	            r3_3 = -4.02621119975e4,  r3_4 = -2.29660729780e3,   r3_5 = -1.16328495004e5,
-	            r3_6 = -1.46025937511e5,  r3_7 = -2.42357409629e4,   r3_8 = -5.70691009324e2,
-	            r4_0 = 0.279195317918525, r4_1 = 0.4917317610505968, r4_2 = 0.0692910599291889,
-	            r4_3 = 3.350343815022304, r4_4 = 6.012459259764103;
+	    var a,b,c;
+	    if(x < 0.5) { a = -y; b = x+1; c = x; }
+	    else        { a = 0;  b = x;   c = x-1; }
 
 
-	        // Normal cases
-	        if(x < 1.5)
-	            return a + c *
-	                  ((((r1_4 * b + r1_3) * b + r1_2) * b + r1_1) * b + r1_0) /
-	                  ((((b + r1_8) * b + r1_7) * b + r1_6) * b + r1_5);
+	    var r1_0 = -2.66685511495,    r1_1 = -24.4387534237,     r1_2 = -21.9698958928,
+	        r1_3 = 11.1667541262,     r1_4 = 3.13060547623,      r1_5 = 0.607771387771,
+	        r1_6 = 11.9400905721,     r1_7 = 31.4690115749,      r1_8 = 15.2346874070,
+	        r2_0 = -78.3359299449,    r2_1 = -142.046296688,     r2_2 = 137.519416416,
+	        r2_3 =  78.6994924154,    r2_4 = 4.16438922228,      r2_5 = 47.0668766060,
+	        r2_6 = 313.399215894,     r2_7 = 263.505074721,      r2_8 = 43.3400022514,
+	        r3_0 = -2.12159572323e5,  r3_1 = 2.30661510616e5,    r3_2 = 2.74647644705e4,
+	        r3_3 = -4.02621119975e4,  r3_4 = -2.29660729780e3,   r3_5 = -1.16328495004e5,
+	        r3_6 = -1.46025937511e5,  r3_7 = -2.42357409629e4,   r3_8 = -5.70691009324e2,
+	        r4_0 = 0.279195317918525, r4_1 = 0.4917317610505968, r4_2 = 0.0692910599291889,
+	        r4_3 = 3.350343815022304, r4_4 = 6.012459259764103;
 
-	        if(x < 4)
-	            return (x - 2) *
-	                  ((((r2_4 * x + r2_3) * x + r2_2) * x + r2_1) * x + r2_0) /
-	                  ((((x + r2_8) * x + r2_7) * x + r2_6) * x + r2_5);
 
-	        if(x < 12)
-	            return ((((r3_4 * x + r3_3) * x + r3_2) * x + r3_1) * x + r3_0) /
-	                   ((((x + r3_8) * x + r3_7) * x + r3_6) * x + r3_5);
+	    // Normal cases
+	    if(x < 1.5)
+	        return a + c *
+	              ((((r1_4 * b + r1_3) * b + r1_2) * b + r1_1) * b + r1_0) /
+	              ((((b + r1_8) * b + r1_7) * b + r1_6) * b + r1_5);
 
-	        if(x > 3e6)
-	            return k;
+	    if(x < 4)
+	        return (x - 2) *
+	              ((((r2_4 * x + r2_3) * x + r2_2) * x + r2_1) * x + r2_0) /
+	              ((((x + r2_8) * x + r2_7) * x + r2_6) * x + r2_5);
 
-	        /* otherwise*/
-	            return k + x1 *
-	                  ((r4_2 * x2 + r4_1) * x2 + r4_0) /
-	                  ((x2 + r4_4) * x2 + r4_3);
+	    if(x < 12)
+	        return ((((r3_4 * x + r3_3) * x + r3_2) * x + r3_1) * x + r3_0) /
+	               ((((x + r3_8) * x + r3_7) * x + r3_6) * x + r3_5);
+
+	    if(x > 3e6)
+	        return k;
+
+	    /* otherwise*/
+	        return k + x1 *
+	              ((r4_2 * x2 + r4_1) * x2 + r4_0) /
+	              ((x2 + r4_4) * x2 + r4_3);
+	}
+	exports.logGamma = _logGamma;
+
+
+	function _logGammaL(x) {
+
+	    if (x <= 0) return Infinity;
+
+	    if (x <= 1e-3) return _logGamma(x);
+
+	    var x65 = x + 6.5,
+	        a0  = 0.9999999999995183,
+	        a   = [ 0.1659470187408462e-06
+	              , 0.9934937113930748e-05
+	              , -0.1385710331296526
+	              , 12.50734324009056
+	              , -176.6150291498386
+	              , 771.3234287757674
+	              , -1259.139216722289
+	              , 676.5203681218835
+	              ];
+
+	    var folded = _ss.foldL(new T.Tuple(0,x+7), a, function (t,k) {
+	        var l = t.fst, t = t.snd;
+	        return new T.Tuple(l + k / t, t-1);
+	    });
+
+	    return Math.log(folded.fst + a0) + Math.log(constant.sqrt_2_pi) - x65 + (x-0.5) * Math.log(x65);
+	}
+	exports.logGammaL = _logGammaL;
+
+
+	function _logGammaCorrection(x) {
+	    if(x < 10) return NaN;
+
+	    var big    = 94906265.62425156,
+	        t      = 10 / x,
+	        coeffs = [
+	                   0.1666389480451863247205729650822e0,
+	                  -0.1384948176067563840732986059135e-4,
+	                   0.9810825646924729426157171547487e-8,
+	                  -0.1809129475572494194263306266719e-10,
+	                   0.6221098041892605227126015543416e-13,
+	                  -0.3399615005417721944303330599666e-15,
+	                   0.2683181998482698748957538846666e-17
+	                 ];
+
+	    if(x < big) return chebyshev.chebyshevBroucke( (t * t * 2 - 1), coeffs ) / x;
+
+	    return 1 / ( x * 12 );
+	}
+	exports.logGammaCorrection = _logGammaCorrection;
+
+
+	/**
+	 * LOWER INCOMPLETE GAMMA
+	 *
+	 * given by:
+	 *           x
+	 *  γ(p,x) = ∫ ( t ^ ( p - 1 ) ) * ( e ^ ( - t ) ) dt
+	 *           0
+	 *
+	 **/
+	var ig_limit = -88, ig_tolerance = 1e-14, ig_overflow = 1e37;
+
+	function _pearson(x,a,c,g) {
+	    var a0 = a, c0 = c, g0 = g;
+
+	    while(true) {
+	        var a1 = a0 + 1, c1 = c0 * x / a1, g1 = g0 + c1;
+
+	        if(c1 <= ig_tolerance) return g1;
+
+	        a0 = a1, c0 = c1, g0 = g1;
 	    }
-	    exports.logGamma = _logGamma;
+	}
 
 
-	    function _logGammaL(x) {
+	function _contFrac(a,b,c,p1,p2,p3,p4,g) {
 
-	        if (x <= 0) return Infinity;
+	    var a1 = a + 1,
+	        b1 = b + 2,
+	        c1 = c + 1,
+	        an = a1 * c1,
+	        p5 = b1 * p3 - an * p1,
+	        p6 = b1 * p4 - an * p2,
+	        rn = p5 / p6,
+	        f = function (n) {
+	            if(Math.abs(p5) > ig_overflow) return n / ig_overflow;
+	            else return n;
+	        };
 
-	        if (x <= 1e-3) return _logGamma(x);
-
-	        var x65 = x + 6.5,
-	            a0  = 0.9999999999995183,
-	            a   = [ 0.1659470187408462e-06
-	                  , 0.9934937113930748e-05
-	                  , -0.1385710331296526
-	                  , 12.50734324009056
-	                  , -176.6150291498386
-	                  , 771.3234287757674
-	                  , -1259.139216722289
-	                  , 676.5203681218835
-	                  ];
-
-	        var folded = _ss.foldL(new T.Tuple(0,x+7), a, function (t,k) {
-	            var l = t.fst, t = t.snd;
-	            return new T.Tuple(l + k / t, t-1);
-	        });
-
-	        return Math.log(folded.fst + a0) + Math.log(constant.sqrt_2_pi) - x65 + (x-0.5) * Math.log(x65);
-	    }
-	    exports.logGammaL = _logGammaL;
+	    if(Math.abs(g - rn) <= Math.min(ig_tolerance, ig_tolerance * rn)) return g;
+	    else return _contFrac(a1,b1,c1,f(p3),f(p4),f(p5),f(p6),rn);
+	}
 
 
-	    function _logGammaCorrection(x) {
-	        if(x < 10) return NaN;
+	function _g1Approx (x,p) {
 
-	        var big    = 94906265.62425156,
-	            t      = 10 / x,
-	            coeffs = [
-	                       0.1666389480451863247205729650822e0,
-	                      -0.1384948176067563840732986059135e-4,
-	                       0.9810825646924729426157171547487e-8,
-	                      -0.1809129475572494194263306266719e-10,
-	                       0.6221098041892605227126015543416e-13,
-	                      -0.3399615005417721944303330599666e-15,
-	                       0.2683181998482698748957538846666e-17
-	                     ];
+	    var p1     = p - 1,
+	        lnP1   = Math.log(p1),
+	        sqrtP1 = Math.sqrt(p1),
 
-	        if(x < big) return chebyshev.chebyshevBroucke( (t * t * 2 - 1), coeffs ) / x;
+	        // Set upper limit for integration
+	        xu = x > p1 ? Math.max(p1 + 11.5*sqrtP1, x + 6*sqrtP1) :
+	                      Math.max(0, Math.min(p1 -  7.5*sqrtP1,x - 5*sqrtP1)),
 
-	        return 1 / ( x * 12 );
-	    }
-	    exports.logGammaCorrection = _logGammaCorrection;
+	        go = function (y,w) {
+	            var t = x + (xu - x)*y;
+	            return w * Math.exp( -(t-p1) + p1*(Math.log(t) - lnP1) );
+	        },
 
+	        s = _ss.sum( _ss.zipWith(constant.coefY,constant.coefW,go) ),
+	        ans = s * (xu - x) * Math.exp( p1 * (lnP1 - 1) - _logGamma(p) );
 
-	    /**
-	     * LOWER INCOMPLETE GAMMA
-	     *
-	     * given by:
-	     *           x
-	     *  γ(p,x) = ∫ ( t ^ ( p - 1 ) ) * ( e ^ ( - t ) ) dt
-	     *           0
-	     *
-	     **/
-	    var ig_limit = -88, ig_tolerance = 1e-14, ig_overflow = 1e37;
+	    if(ans > 0) return 1 - ans;
 
-	    function _pearson(x,a,c,g) {
-	        var a0 = a, c0 = c, g0 = g;
-
-	        while(true) {
-	            var a1 = a0 + 1, c1 = c0 * x / a1, g1 = g0 + c1;
-
-	            if(c1 <= ig_tolerance) return g1;
-
-	            a0 = a1, c0 = c1, g0 = g1;
-	        }
-	    }
+	    return -ans;
+	}
 
 
-	    function _contFrac(a,b,c,p1,p2,p3,p4,g) {
+	// note: @x is the upper bound on the integral
+	function _incompleteGamma (p,x) {
 
-	        var a1 = a + 1,
-	            b1 = b + 2,
-	            c1 = c + 1,
-	            an = a1 * c1,
-	            p5 = b1 * p3 - an * p1,
-	            p6 = b1 * p4 - an * p2,
-	            rn = p5 / p6,
-	            f = function (n) {
-	                if(Math.abs(p5) > ig_overflow) return n / ig_overflow;
-	                else return n;
-	            };
+	    if(isNaN(p) || isNaN(x)) return NaN;
 
-	        if(Math.abs(g - rn) <= Math.min(ig_tolerance, ig_tolerance * rn)) return g;
-	        else return _contFrac(a1,b1,c1,f(p3),f(p4),f(p5),f(p6),rn);
-	    }
+	    if(x < 0 || p <= 0) return Infinity;
 
+	    if(x === 0) return 0;
 
-	    function _g1Approx (x,p) {
+	    var norm = function (a) { return 0.5 * error.erfc(- a / constant.sqrt_2); };
 
-	        var p1     = p - 1,
-	            lnP1   = Math.log(p1),
-	            sqrtP1 = Math.sqrt(p1),
+	    if(p >= 2e5) return norm(3 * Math.sqrt(p) * ( Math.pow(x/p,1/3) + 1/(9*p) - 1) );
 
-	            // Set upper limit for integration
-	            xu = x > p1 ? Math.max(p1 + 11.5*sqrtP1, x + 6*sqrtP1) :
-	                          Math.max(0, Math.min(p1 -  7.5*sqrtP1,x - 5*sqrtP1)),
+	    if(p >= 500) return _g1Approx(x,p);
 
-	            go = function (y,w) {
-	                var t = x + (xu - x)*y;
-	                return w * Math.exp( -(t-p1) + p1*(Math.log(t) - lnP1) );
-	            },
+	    if(x >= 1e8) return 1;
 
-	            s = _ss.sum( _ss.zipWith(constant.coefY,constant.coefW,go) ),
-	            ans = s * (xu - x) * Math.exp( p1 * (lnP1 - 1) - _logGamma(p) );
-
-	        if(ans > 0) return 1 - ans;
-
-	        return -ans;
-	    }
-
-
-	    // note: @x is the upper bound on the integral
-	    function _incompleteGamma (p,x) {
-
-	        if(isNaN(p) || isNaN(x)) return NaN;
-
-	        if(x < 0 || p <= 0) return Infinity;
-
-	        if(x === 0) return 0;
-
-	        var norm = function (a) { return 0.5 * error.erfc(- a / constant.sqrt_2); };
-
-	        if(p >= 2e5) return norm(3 * Math.sqrt(p) * ( Math.pow(x/p,1/3) + 1/(9*p) - 1) );
-
-	        if(p >= 500) return _g1Approx(x,p);
-
-	        if(x >= 1e8) return 1;
-
-	        if(x <= 1 || x < p) {
-	            var a = p * Math.log(x) - x - _logGamma(p + 1),
-	                g0 = a + Math.log( _pearson(x,p,1,1) );
-	            return g0 > ig_limit ? Math.exp(g0) : 0;
-	        }
-
-	        var cf_a = 1 - p,
-	            cf_b = cf_a + x + 1,
-	            p3 = x + 1,
-	            p4 = x * cf_b,
-	            cf = _contFrac(cf_a, cf_b, 0, 1, x, p3, p4, (p3/p4));
-
-	        var g1 = p * Math.log(x) - x - _logGamma(p) + Math.log(cf);
-	        return g1 > ig_limit ? 1 - Math.exp(g1) : 1;
-	    }
-	    exports.incompleteGamma = _incompleteGamma;
-
-
-	    function _invIncompleteGamma () {
-
+	    if(x <= 1 || x < p) {
+	        var a = p * Math.log(x) - x - _logGamma(p + 1),
+	            g0 = a + Math.log( _pearson(x,p,1,1) );
+	        return g0 > ig_limit ? Math.exp(g0) : 0;
 	    }
 
+	    var cf_a = 1 - p,
+	        cf_b = cf_a + x + 1,
+	        p3 = x + 1,
+	        p4 = x * cf_b,
+	        cf = _contFrac(cf_a, cf_b, 0, 1, x, p3, p4, (p3/p4));
 
-	}).call(this);
+	    var g1 = p * Math.log(x) - x - _logGamma(p) + Math.log(cf);
+	    return g1 > ig_limit ? 1 - Math.exp(g1) : 1;
+	}
+	exports.incompleteGamma = _incompleteGamma;
+
+
+	function _invIncompleteGamma () {
+
+	}
+
+
+
 
 
 /***/ },
 /* 13 */
 /***/ function(module, exports, __webpack_require__) {
 
-	(function () {
+	
 
-	    'use strict';
+	'use strict';
 
-	    var chebyshev = __webpack_require__(11);
+	var chebyshev = __webpack_require__(11);
 
-	    /*
-	     * Compute the natural logarithm of 1 + x.  This is accurate even
-	     * for values of x near zero, where use of log(1+x) would lose
-	     * precision.
-	     **/
-	    function _log1p (x) {
+	/*
+	 * Compute the natural logarithm of 1 + x.  This is accurate even
+	 * for values of x near zero, where use of log(1+x) would lose
+	 * precision.
+	 **/
+	function _log1p (x) {
 
-	        if(x == 0) return 0;
+	    if(x == 0) return 0;
 
-	        if(x == -1) return -Infinity;
+	    if(x == -1) return -Infinity;
 
-	        if(x < -1) return NaN;
+	    if(x < -1) return NaN;
 
-	        var x1 = Math.abs(x),
-	            coeffs = [
-	                       0.10378693562743769800686267719098e+1,
-	                      -0.13364301504908918098766041553133e+0,
-	                       0.19408249135520563357926199374750e-1,
-	                      -0.30107551127535777690376537776592e-2,
-	                       0.48694614797154850090456366509137e-3,
-	                      -0.81054881893175356066809943008622e-4,
-	                       0.13778847799559524782938251496059e-4,
-	                      -0.23802210894358970251369992914935e-5,
-	                       0.41640416213865183476391859901989e-6,
-	                      -0.73595828378075994984266837031998e-7,
-	                       0.13117611876241674949152294345011e-7,
-	                      -0.23546709317742425136696092330175e-8,
-	                       0.42522773276034997775638052962567e-9,
-	                      -0.77190894134840796826108107493300e-10,
-	                       0.14075746481359069909215356472191e-10,
-	                      -0.25769072058024680627537078627584e-11,
-	                       0.47342406666294421849154395005938e-12,
-	                      -0.87249012674742641745301263292675e-13,
-	                       0.16124614902740551465739833119115e-13,
-	                      -0.29875652015665773006710792416815e-14,
-	                       0.55480701209082887983041321697279e-15,
-	                      -0.10324619158271569595141333961932e-15
-	                     ];
+	    var x1 = Math.abs(x),
+	        coeffs = [
+	                   0.10378693562743769800686267719098e+1,
+	                  -0.13364301504908918098766041553133e+0,
+	                   0.19408249135520563357926199374750e-1,
+	                  -0.30107551127535777690376537776592e-2,
+	                   0.48694614797154850090456366509137e-3,
+	                  -0.81054881893175356066809943008622e-4,
+	                   0.13778847799559524782938251496059e-4,
+	                  -0.23802210894358970251369992914935e-5,
+	                   0.41640416213865183476391859901989e-6,
+	                  -0.73595828378075994984266837031998e-7,
+	                   0.13117611876241674949152294345011e-7,
+	                  -0.23546709317742425136696092330175e-8,
+	                   0.42522773276034997775638052962567e-9,
+	                  -0.77190894134840796826108107493300e-10,
+	                   0.14075746481359069909215356472191e-10,
+	                  -0.25769072058024680627537078627584e-11,
+	                   0.47342406666294421849154395005938e-12,
+	                  -0.87249012674742641745301263292675e-13,
+	                   0.16124614902740551465739833119115e-13,
+	                  -0.29875652015665773006710792416815e-14,
+	                   0.55480701209082887983041321697279e-15,
+	                  -0.10324619158271569595141333961932e-15
+	                 ];
 
-	        if(x1 < Number.EPSILON * 0.5) return x;
+	    if(x1 < Number.EPSILON * 0.5) return x;
 
-	        if((x >= 0 && x < 1e-8) || (x >= -1e-9 && x < 0)) return x * (1 - x * 0.5);
+	    if((x >= 0 && x < 1e-8) || (x >= -1e-9 && x < 0)) return x * (1 - x * 0.5);
 
-	        if(x1 < 0.375) return x * (1 - x * chebyshev.chebyshevBroucke((x / 0.375), coeffs));
+	    if(x1 < 0.375) return x * (1 - x * chebyshev.chebyshevBroucke((x / 0.375), coeffs));
 
-	        return Math.log(1+x);
-	    }
-	    exports.log1p = _log1p;
+	    return Math.log(1+x);
+	}
+	exports.log1p = _log1p;
 
 
 
-	}).call(this);
+
 
 
 /***/ },
 /* 14 */
 /***/ function(module, exports, __webpack_require__) {
 
-	(function () {
+	
 
-	    'use strict';
+	'use strict';
 
-	    var _ss      = __webpack_require__(2),
-	        _        = __webpack_require__(22);
-
-
-	    function _evaluatePolynomial(x,coeffs) {
-	        if(coeffs.length == 0) return 0;
-
-	        return _ss.foldR1(coeffs, function (a,r) {
-	            return a + r*x;
-	        });
-	    }
-	    exports.evaluatePolynomial = _evaluatePolynomial;
+	var _ss      = __webpack_require__(2),
+	    _        = __webpack_require__(22);
 
 
-	    function _evaluateEvenPolynomial (x,coeffs) {
-	        return _evaluatePolynomial(x*x,coeffs);
-	    }
-	    exports.evaluateEvenPolynomial = _evaluateEvenPolynomial;
+	function _evaluatePolynomial(x,coeffs) {
+	    if(coeffs.length == 0) return 0;
+
+	    return _ss.foldR1(coeffs, function (a,r) {
+	        return a + r*x;
+	    });
+	}
+	exports.evaluatePolynomial = _evaluatePolynomial;
 
 
-	    function _evaluateOddPolynomial (x,coeffs) {
-	        return x * evaluatePolynomial(x*x,coeffs);
-	    }
-	    exports.evaluateOddPolynomial = _evaluateOddPolynomial;
+	function _evaluateEvenPolynomial (x,coeffs) {
+	    return _evaluatePolynomial(x*x,coeffs);
+	}
+	exports.evaluateEvenPolynomial = _evaluateEvenPolynomial;
 
 
-	}).call(this);
+	function _evaluateOddPolynomial (x,coeffs) {
+	    return x * evaluatePolynomial(x*x,coeffs);
+	}
+	exports.evaluateOddPolynomial = _evaluateOddPolynomial;
+
+
+
 
 
 /***/ },
 /* 15 */
 /***/ function(module, exports, __webpack_require__) {
 
-	(function () {
+	
 
-	    'use strict';
+	'use strict';
 
-	    var _ss       = __webpack_require__(2),
-	        _         = __webpack_require__(22),
-	        error     = __webpack_require__(8),
-	        constant  = __webpack_require__(7),
-	        gamma     = __webpack_require__(12),
-	        logarithm = __webpack_require__(13);
+	var _ss       = __webpack_require__(2),
+	    _         = __webpack_require__(22),
+	    error     = __webpack_require__(8),
+	    constant  = __webpack_require__(7),
+	    gamma     = __webpack_require__(12),
+	    logarithm = __webpack_require__(13);
 
 
-	    function _logBeta (a,b) {
+	function _logBeta (a,b) {
 
-	        var p   = Math.min(a, b),
-	            q   = Math.max(a, b),
-	            ppq = p / pq,
-	            pq  = p + q,
-	            c   = gamma.logGammaCorrection(q) - logGammaCorrection(pq);
+	    var p   = Math.min(a, b),
+	        q   = Math.max(a, b),
+	        ppq = p / pq,
+	        pq  = p + q,
+	        c   = gamma.logGammaCorrection(q) - logGammaCorrection(pq);
 
-	        if(p < 0) return NaN;
+	    if(p < 0) return NaN;
 
-	        if(p == 0) return Infinity;
+	    if(p == 0) return Infinity;
 
-	        if(p >= 10) return Math.log(q) * (-0.5) + constant.ln_sqrt_2_pi +
-	                           gamma.logGammaCorrection(p) + c + (p - 0.5) *
-	                           Math.log(ppq) + q * logarithm.log1p(-ppq);
+	    if(p >= 10) return Math.log(q) * (-0.5) + constant.ln_sqrt_2_pi +
+	                       gamma.logGammaCorrection(p) + c + (p - 0.5) *
+	                       Math.log(ppq) + q * logarithm.log1p(-ppq);
 
-	        if(q >= 10) return gamma.logGamma(p) + c + p - p * Math.log(pq) +
-	                           (q - 0.5) * logarithm.log1p(-ppq);
+	    if(q >= 10) return gamma.logGamma(p) + c + p - p * Math.log(pq) +
+	                       (q - 0.5) * logarithm.log1p(-ppq);
 
-	        return gamma.logGamma(p) + gamma.logGamma(q) - gamma.logGamma(pq);
+	    return gamma.logGamma(p) + gamma.logGamma(q) - gamma.logGamma(pq);
+	}
+
+
+	function _incompleteBeta (p,q,x) {
+	    return _incompleteBeta_0(_logBeta(p,q),p,q,x);
+	}
+
+
+	function _incompleteBeta_0 (beta,p,q,x) {
+	    if(p <= 0 || q <= 0) throw new Error("incompleteBeta_: p <= 0 || q <= 0");
+
+	    if(x <  0 || x >  1 || isNaN(x)) throw new Error("incompletBeta_: x out of [0,1] range");
+
+	    if(x == 0 || x == 1) return x;
+
+	    if(p >= (p+q) * x) return _incompleteBetaWorker(beta, p, q, x);
+
+	    return 1 - _incompleteBetaWorker(beta, q, p, (1-x));
+	}
+
+
+	function _incompleteBetaApprox (beta, p, q, x) {
+	    var p1    = p - 1,
+	        q1    = q - 1,
+	        mu    = p / (p + q),
+	        lnmu  = Math.log(mu),
+	        lnmuc = Math.log(1 - mu),
+
+	        t = Math.sqrt(p*q / ( (p+q) * (p+q) * (p + q + 1) )),
+
+	        // Upper limit for integration
+	        xu = Math.max(0, Math.min(mu - 10*t, x - 5*t)),
+
+	        // Calculate incomplete beta by quadrature
+	        go = function (y,w) {
+	            var go_t = x + (xu - x) * y;
+	            return w * Math.exp( p1 * (Math.log(go_t) - lnmu) + q1 * (Math.log(1-t) - lnmuc) );
+	        },
+
+	        s   = _ss.sum(_ss.zipWith( constant.coefY, constant.coefW, go)),
+	        ans = s * (xu - x) * Math.exp( p1 * lnmu + q1 * lnmuc - beta );
+
+	    if(ans > 0) return 1 - ans;
+
+	    return -ans;
+	}
+
+
+	function _incompleteBetaWorker (beta, p, q, x) {
+
+	    if(p > 3000 && q > 3000) return _incompleteBetaApprox(beta, p, q, x);
+
+	    var eps = 1e-15, cx  = 1 - x;
+
+	    var psq = (p+q), ns = Math.trunc(q + cx * (p+q)), ai = 1, term = 1, betain = 1;
+
+	    while(true) {
+	        var fact;
+	        if     (ns > 0)  fact = (q - ai) * x/cx;
+	        else if(ns == 0) fact = (q - ai) * x;
+	        else             fact = psq * x;
+
+	        var term1 = term * fact / (p + ai),
+	            betain1 = betain + term1,
+	            psq1 = ns < 0 ? psq + 1 : psq,
+	            db = Math.abs(term1);
+
+	        if(db <= eps && db <= eps*betain1)
+	            return betain1 * Math.exp( p * Math.log(x) + (q - 1) * Math.log(cx) - beta) / p;
+
+	        psq = psq1;
+	        ns = ns - 1;
+	        ai = ai + 1;
+	        term = term1;
+	        betain = betain1;
 	    }
+	}
 
 
-	    function _incompleteBeta (p,q,x) {
-	        return _incompleteBeta_0(_logBeta(p,q),p,q,x);
-	    }
+	function _invIncompleteBeta () {
+
+	}
 
 
-	    function _incompleteBeta_0 (beta,p,q,x) {
-	        if(p <= 0 || q <= 0) throw new Error("incompleteBeta_: p <= 0 || q <= 0");
+	function _invIncompleteBetaWorker () {
 
-	        if(x <  0 || x >  1 || isNaN(x)) throw new Error("incompletBeta_: x out of [0,1] range");
-
-	        if(x == 0 || x == 1) return x;
-
-	        if(p >= (p+q) * x) return _incompleteBetaWorker(beta, p, q, x);
-
-	        return 1 - _incompleteBetaWorker(beta, q, p, (1-x));
-	    }
+	}
 
 
-	    function _incompleteBetaApprox (beta, p, q, x) {
-	        var p1    = p - 1,
-	            q1    = q - 1,
-	            mu    = p / (p + q),
-	            lnmu  = Math.log(mu),
-	            lnmuc = Math.log(1 - mu),
-
-	            t = Math.sqrt(p*q / ( (p+q) * (p+q) * (p + q + 1) )),
-
-	            // Upper limit for integration
-	            xu = Math.max(0, Math.min(mu - 10*t, x - 5*t)),
-
-	            // Calculate incomplete beta by quadrature
-	            go = function (y,w) {
-	                var go_t = x + (xu - x) * y;
-	                return w * Math.exp( p1 * (Math.log(go_t) - lnmu) + q1 * (Math.log(1-t) - lnmuc) );
-	            },
-
-	            s   = _ss.sum(_ss.zipWith( constant.coefY, constant.coefW, go)),
-	            ans = s * (xu - x) * Math.exp( p1 * lnmu + q1 * lnmuc - beta );
-
-	        if(ans > 0) return 1 - ans;
-
-	        return -ans;
-	    }
-
-
-	    function _incompleteBetaWorker (beta, p, q, x) {
-
-	        if(p > 3000 && q > 3000) return _incompleteBetaApprox(beta, p, q, x);
-
-	        var eps = 1e-15, cx  = 1 - x;
-
-	        var psq = (p+q), ns = Math.trunc(q + cx * (p+q)), ai = 1, term = 1, betain = 1;
-
-	        while(true) {
-	            var fact;
-	            if     (ns > 0)  fact = (q - ai) * x/cx;
-	            else if(ns == 0) fact = (q - ai) * x;
-	            else             fact = psq * x;
-
-	            var term1 = term * fact / (p + ai),
-	                betain1 = betain + term1,
-	                psq1 = ns < 0 ? psq + 1 : psq,
-	                db = Math.abs(term1);
-
-	            if(db <= eps && db <= eps*betain1)
-	                return betain1 * Math.exp( p * Math.log(x) + (q - 1) * Math.log(cx) - beta) / p;
-
-	            psq = psq1;
-	            ns = ns - 1;
-	            ai = ai + 1;
-	            term = term1;
-	            betain = betain1;
-	        }
-	    }
-
-
-	    function _invIncompleteBeta () {
-
-	    }
-
-
-	    function _invIncompleteBetaWorker () {
-
-	    }
-
-	}).call(this);
 
 
 /***/ },
 /* 16 */
 /***/ function(module, exports, __webpack_require__) {
 
-	(function () {
+	
 
-	    'use strict';
+	'use strict';
 
-	    function _choose(n,k) {
-	        var max = Math.max(k, n - k);
-	        var result = 1;
-	        for (var i = 1; i <= n - max; i++) {
-	            result = result * (max + i) / i;
-	        }
-	        return result;
+	function _choose(n,k) {
+	    var max = Math.max(k, n - k);
+	    var result = 1;
+	    for (var i = 1; i <= n - max; i++) {
+	        result = result * (max + i) / i;
 	    }
-	    exports.choose = _choose;
+	    return result;
+	}
+	exports.choose = _choose;
 
 
-	}).call(this);
+
 
 
 /***/ },
 /* 17 */
 /***/ function(module, exports, __webpack_require__) {
 
-	(function () {
+	
 
-	    'use strict';
+	'use strict';
 
-	    var _ss      = __webpack_require__(2),
-	        number   = __webpack_require__(4),
-	        _        = __webpack_require__(22),
-	        polyn    = __webpack_require__(14),
-	        gamma    = __webpack_require__(12),
-	        constant = __webpack_require__(7);
+	var _ss      = __webpack_require__(2),
+	    number   = __webpack_require__(4),
+	    _        = __webpack_require__(22),
+	    polyn    = __webpack_require__(14),
+	    gamma    = __webpack_require__(12),
+	    constant = __webpack_require__(7);
 
 
-	    function _factorial (n) {
-	        if(n < 0) throw new Error("factorial: negative input");
+	function _factorial (n) {
+	    if(n < 0) throw new Error("factorial: negative input");
 
-	        if(n <= 1) return 1;
+	    if(n <= 1) return 1;
 
-	        if(n <= 170) {
-	            var seed = 1;
-	            for (var i = 2; i < n+1; i++) {
-	                seed *= i;
-	            };
-	            return seed;
-	        }
-
-	        return Infinity;
+	    if(n <= 170) {
+	        var seed = 1;
+	        for (var i = 2; i < n+1; i++) {
+	            seed *= i;
+	        };
+	        return seed;
 	    }
-	    exports.factorial = _factorial;
+
+	    return Infinity;
+	}
+	exports.factorial = _factorial;
 
 
-	    function _logFactorial(n) {
-	        if(n < 0) throw new Error("logFactorial: negative input");
+	function _logFactorial(n) {
+	    if(n < 0) throw new Error("logFactorial: negative input");
 
-	        if(n <= 14) return Math.log(_factorial(n));
+	    if(n <= 14) return Math.log(_factorial(n));
 
-	        var x = n + 1,
-	            y = 1 / (x * x),
-	            z = ((-(5.95238095238e-4 * y) + 7.936500793651e-4) * y -
-	                   2.7777777777778e-3) * y + 8.3333333333333e-2;
+	    var x = n + 1,
+	        y = 1 / (x * x),
+	        z = ((-(5.95238095238e-4 * y) + 7.936500793651e-4) * y -
+	               2.7777777777778e-3) * y + 8.3333333333333e-2;
 
-	        return (x - 0.5) * Math.log(x) - x + 9.1893853320467e-1 + z / x;
+	    return (x - 0.5) * Math.log(x) - x + 9.1893853320467e-1 + z / x;
+	}
+	exports.logFactorial = _logFactorial;
+
+
+	var sfe = [ 0.0,
+	            0.1534264097200273452913848,   0.0810614667953272582196702,
+	            0.0548141210519176538961390,   0.0413406959554092940938221,
+	            0.03316287351993628748511048,  0.02767792568499833914878929,
+	            0.02374616365629749597132920,  0.02079067210376509311152277,
+	            0.01848845053267318523077934,  0.01664469118982119216319487,
+	            0.01513497322191737887351255,  0.01387612882307074799874573,
+	            0.01281046524292022692424986,  0.01189670994589177009505572,
+	            0.01110455975820691732662991,  0.010411265261972096497478567,
+	            0.009799416126158803298389475, 0.009255462182712732917728637,
+	            0.008768700134139385462952823, 0.008330563433362871256469318,
+	            0.007934114564314020547248100, 0.007573675487951840794972024,
+	            0.007244554301320383179543912, 0.006942840107209529865664152,
+	            0.006665247032707682442354394, 0.006408994188004207068439631,
+	            0.006171712263039457647532867, 0.005951370112758847735624416,
+	            0.005746216513010115682023589, 0.005554733551962801371038690 ];
+
+	function _stirlingError(n) {
+	    if(n <= 15.0) {
+	        var pf = number.properFraction(n+n);
+
+	        if(pf.snd === 0) return sfe[i];
+	        return gamma.logGamma(n+1.0) - (n+0.5) * Math.log(n) + n -
+	               constant.ln_sqrt_2_pi
 	    }
-	    exports.logFactorial = _logFactorial;
+
+	    var s0 = 0.083333333333333333333,
+	        s1 = 0.00277777777777777777778,
+	        s2 = 0.00079365079365079365079365,
+	        s3 = 0.000595238095238095238095238,
+	        s4 = 0.0008417508417508417508417508;
+
+	    if(n > 500) return polyn.evaluateOddPolynomial(1/n, [s0,-s1]);
+
+	    if(n > 80) return polyn.evaluateOddPolynomial(1/n, [s0,-s1,s2]);
+
+	    if(n > 35) return polyn.evaluateOddPolynomial(1/n, [s0,-s1,s2,-s3]);
+
+	    return polyn.evaluateOddPolynomial(1/n, [s0,-s1,s2,-s3,s4]);
+	}
+	exports.stirlingError = _stirlingError;
 
 
-	    var sfe = [ 0.0,
-	                0.1534264097200273452913848,   0.0810614667953272582196702,
-	                0.0548141210519176538961390,   0.0413406959554092940938221,
-	                0.03316287351993628748511048,  0.02767792568499833914878929,
-	                0.02374616365629749597132920,  0.02079067210376509311152277,
-	                0.01848845053267318523077934,  0.01664469118982119216319487,
-	                0.01513497322191737887351255,  0.01387612882307074799874573,
-	                0.01281046524292022692424986,  0.01189670994589177009505572,
-	                0.01110455975820691732662991,  0.010411265261972096497478567,
-	                0.009799416126158803298389475, 0.009255462182712732917728637,
-	                0.008768700134139385462952823, 0.008330563433362871256469318,
-	                0.007934114564314020547248100, 0.007573675487951840794972024,
-	                0.007244554301320383179543912, 0.006942840107209529865664152,
-	                0.006665247032707682442354394, 0.006408994188004207068439631,
-	                0.006171712263039457647532867, 0.005951370112758847735624416,
-	                0.005746216513010115682023589, 0.005554733551962801371038690 ];
 
-	    function _stirlingError(n) {
-	        if(n <= 15.0) {
-	            var pf = number.properFraction(n+n);
-
-	            if(pf.snd === 0) return sfe[i];
-	            return gamma.logGamma(n+1.0) - (n+0.5) * Math.log(n) + n -
-	                   constant.ln_sqrt_2_pi
-	        }
-
-	        var s0 = 0.083333333333333333333,
-	            s1 = 0.00277777777777777777778,
-	            s2 = 0.00079365079365079365079365,
-	            s3 = 0.000595238095238095238095238,
-	            s4 = 0.0008417508417508417508417508;
-
-	        if(n > 500) return polyn.evaluateOddPolynomial(1/n, [s0,-s1]);
-
-	        if(n > 80) return polyn.evaluateOddPolynomial(1/n, [s0,-s1,s2]);
-
-	        if(n > 35) return polyn.evaluateOddPolynomial(1/n, [s0,-s1,s2,-s3]);
-
-	        return polyn.evaluateOddPolynomial(1/n, [s0,-s1,s2,-s3,s4]);
-	    }
-	    exports.stirlingError = _stirlingError;
-
-
-	}).call(this);
 
 
 /***/ },
 /* 18 */
 /***/ function(module, exports, __webpack_require__) {
 
-	(function () {
+	
 
-	    'use strict';
+	'use strict';
 
-	    var _ss      = __webpack_require__(2),
-	        _        = __webpack_require__(22),
-	        error    = __webpack_require__(8),
-	        constant = __webpack_require__(7);
+	var _ss      = __webpack_require__(2),
+	    _        = __webpack_require__(22),
+	    error    = __webpack_require__(8),
+	    constant = __webpack_require__(7);
 
 
-	    function _ND(mean, stdDev) {
-	        if(stdDev <= 0) {
-	            throw new Error(
-	                "Statscript.Distribution.Normal: " +
-	                "standard deviation must be positive"
-	            );
+	function _ND(mean, stdDev) {
+	    if(stdDev <= 0) {
+	        throw new Error(
+	            "Statscript.Distribution.Normal: " +
+	            "standard deviation must be positive"
+	        );
+	    }
+
+	    this.mean = mean;
+	    this.stdDev = stdDev;
+	    this.pdfDenom = Math.log( constant.sqrt_2_pi * stdDev );
+	    this.cdfDenom = constant.sqrt_2 * stdDev;
+	}
+
+
+	/**
+	 * standard normal distribution with mean 0
+	 * and standard deviation 1
+	 **/
+	function _standard () {
+	    return new _ND(0,1);
+	}
+	exports.standard = _standard;
+
+
+	/**
+	 * standard normal distribution with mean
+	 * and standard deviation set by caller
+	 **/
+	function _normal (mean, stdDev) {
+	    return new _ND(mean, stdDev);
+	}
+	exports.normal = _normal;
+
+
+	/**
+	 * cumulative distribution function. gives the
+	 * probability that a normally distributed random
+	 * variable X will have a value less than or
+	 * equal to x. P(X <= x)
+	 **/
+	function _cdf (distribution, probability) {
+	    if( !(distribution instanceof _ND) ) {
+	        throw new Error(
+	            "statscript.distribution.normal.cdf: " +
+	            "distribution parameter is not Normal"
+	        );
+	    };
+
+	    // if @distribution is the only parameter
+	    // partially apply the cdf function to it
+	    if(_.isUndefined(probability)) {
+	        return function (p) {
+	            return error.erfc((distribution.mean - p) / distribution.cdfDenom) / 2;
 	        }
-
-	        this.mean = mean;
-	        this.stdDev = stdDev;
-	        this.pdfDenom = Math.log( constant.sqrt_2_pi * stdDev );
-	        this.cdfDenom = constant.sqrt_2 * stdDev;
 	    }
 
-
-	    function _standard () {
-	        return new _ND(0,1);
-	    }
-	    exports.standard = _standard;
+	    return error.erfc((distribution.mean - probability) / distribution.cdfDenom) / 2;
+	}
+	exports.cdf = _cdf;
 
 
-	    function _normal (mean, stdDev) {
-	        return new _ND(mean, stdDev);
-	    }
-	    exports.normal = _normal;
+	/**
+	 * compliment of the cumulative distribution function.
+	 * gives the probability that a normally distributed
+	 * random variable X will have a value greater than or
+	 * equal to x. P(X >= x)
+	 **/
+	function _complCdf (distribution, probability) {
+	    if( !(distribution instanceof _ND) ) {
+	        throw new Error(
+	            "statscript.distribution.normal.complCdf: " +
+	            "distribution parameter is not Normal"
+	        );
+	    };
 
-
-	    function _cdf (distribution, probability) {
-	        if( !(distribution instanceof _ND) ) {
-	            throw new Error(
-	                "statscript.distribution.normal.cdf: " +
-	                "distribution parameter is not Normal"
-	            );
-	        };
-
-	        // if @distribution is the only parameter
-	        // partially apply the cdf function to it
-	        if(_.isUndefined(probability)) {
-	            return function (p) {
-	                return error.erfc((d.mean - p) / d.cdfDenom) / 2;
-	            }
+	    // if @distribution is the only parameter
+	    // partially apply the cdf function to it
+	    if(_.isUndefined(probability)) {
+	        return function (p) {
+	            return error.erfc((p - distribution.mean) / distribution.cdfDenom) / 2;
 	        }
-
-	        return error.erfc((d.mean - probability) / d.cdfDenom) / 2;
 	    }
-	    exports.cdf = _cdf;
+
+	    return error.erfc((probability - distribution.mean) / distribution.cdfDenom) / 2;
+	}
+	exports.complCdf = _complCdf;
 
 
-	    function _complCdf (distribution, probability) {
-	        if( !(distribution instanceof _ND) ) {
-	            throw new Error(
-	                "statscript.distribution.normal.complCdf: " +
-	                "distribution parameter is not Normal"
-	            );
-	        };
+	function _quantile(dist,p) {
+	    if(p === 0) return - Infinity;
 
-	        // if @distribution is the only parameter
-	        // partially apply the cdf function to it
-	        if(_.isUndefined(probability)) {
-	            return function (p) {
-	                return error.erfc((p - d.mean) / d.cdfDenom) / 2;
-	            }
+	    if(p === 1) return Infinity;
+
+	    if(p === 0.5) return dist.mean;
+
+	    if(p > 0 && p < 1) {
+	        var x = - error.invErfc(2 * p);
+	        return x * dist.cdfDenom + dist.mean;
+	    }
+
+	    throw new Error("statistics.distribution.normal.quantile: p must be in [0,1] range.");
+	}
+	exports.quantile = _quantile;
+
+
+	/**
+	 * natural log of normal probability density function
+	 **/
+	function _logDensity(dist,x) {
+	    var xm = x - dist.mean, sd = dist.stdDev;
+	    return (-xm * xm / (2 * sd * sd)) - dist.pdfDenom;
+	}
+	exports.logDensity = _logDensity;
+
+
+	/**
+	 * probability density function for a normal distribution
+	 **/
+	function _density(distribution,x) {
+	    if( !(distribution instanceof _ND) ) {
+	        throw new Error(
+	            "statscript.distribution.normal.density: " +
+	            "distribution parameter is not Normal"
+	        );
+	    };
+
+	    // if @distribution is the only parameter
+	    // partially apply the density function to it
+	    if(_.isUndefined(x)) {
+
+	        return function (p) {
+	            return Math.exp(_logDensity(distribution,p));
 	        }
-
-	        return error.erfc((probability - d.mean) / d.cdfDenom) / 2;
 	    }
-	    exports.complCdf = _complCdf;
+
+	    return Math.exp(_logDensity(distribution,x));
+	}
+	exports.density = _density;
 
 
-	    function _quantile(dist,p) {
-	        if(p === 0) return - Infinity;
+	/**
+	 * find the root of the cdf function. for those familiar with
+	 * excel, this basically allows the creation of the NORMSINV
+	 * function.
+	 **/
+	function _findRoot(dist,prob,initGuess,lower,upper) {
+	    var accuracy = 1e-15, maxIters = 150;
+	    var loop = function (i,dx,x,lo,hi) {
+	        // base case: return guess
+	        if(Math.abs(dx) <= accuracy || i >= maxIters) return x;
 
-	        if(p === 1) return Infinity;
+	        else {
+	            var err = _cdf(dist,x) - prob, pdf = _density(dist,x);
 
-	        if(p === 0.5) return dist.mean;
+	            var lo1, hi1, dx1, x1, dx2, x2;
 
-	        if(p > 0 && p < 1) {
-	            var x = - error.invErfc(2 * p);
-	            return x * dist.cdfDenom + dist.mean;
+	            if(err < 0) { lo1 = x; hi1 = hi; }
+	            else { lo1 = lo; hi1 = x; }
+
+	            if(pdf != 0) { dx1 = (err / pdf); x1 = (x-dx); }
+	            else { dx1 = dx; x1 = x; }
+
+	            if(x1 < lo1 || x1 > hi1 || pdf === 0) { var y = (lo1 + hi1) / 2; dx2 = y-x; x2 = y; }
+	            else { dx2 = dx1; x2 = x1; }
+
+	            return loop( (i+1), dx2, x2, lo1, hi1 );
 	        }
+	    };
 
-	        throw new Error("statistics.distribution.normal.quantile: p must be in [0,1] range.");
-	    }
-	    exports.quantile = _quantile;
-
-
-	    function _logDensity(dist,x) {
-	        var xm = x - dist.mean, sd = dist.stdDev;
-	        return (-xm * xm / (2 * sd * sd)) - dist.pdfDenom;
-	    }
-	    exports.logDensity = _logDensity;
+	    return loop(0,1,initGuess,lower,upper);
+	}
+	exports.findRoot = _findRoot;
 
 
-	    function _density(distribution,x) {
-	        if( !(distribution instanceof _ND) ) {
-	            throw new Error(
-	                "statscript.distribution.normal.density: " +
-	                "distribution parameter is not Normal"
-	            );
-	        };
-
-	        // if @distribution is the only parameter
-	        // partially apply the density function to it
-	        if(_.isUndefined(x)) {
-
-	            return function (p) {
-	                return Math.exp(_logDensity(distribution,p));
-	            }
-	        }
-
-	        return Math.exp(_logDensity(distribution,x));
-	    }
-	    exports.density = _density;
-
-
-	    function _findRoot(dist,prob,initGuess,lower,upper) {
-	        var accuracy = 1e-15, maxIters = 150;
-	        var loop = function (i,dx,x,lo,hi) {
-	            // base case: return guess
-	            if(Math.abs(dx) <= accuracy || i >= maxIters) return x;
-
-	            else {
-	                var err = _cdf(dist,x) - prob, pdf = _density(dist,x);
-
-	                var lo1, hi1, dx1, x1, dx2, x2;
-
-	                if(err < 0) { lo1 = x; hi1 = hi; }
-	                else { lo1 = lo; hi1 = x; }
-
-	                if(pdf != 0) { dx1 = (err / pdf); x1 = (x-dx); }
-	                else { dx1 = dx; x1 = x; }
-
-	                if(x1 < lo1 || x1 > hi1 || pdf === 0) { var y = (lo1 + hi1) / 2; dx2 = y-x; x2 = y; }
-	                else { dx2 = dx1; x2 = x1; }
-
-	                return loop( (i+1), dx2, x2, lo1, hi1 );
-	            }
-	        };
-
-	        return loop(0,1,initGuess,lower,upper);
-	    }
-	    exports.findRoot = _findRoot;
-
-
-	}).call(this);
 
 
 /***/ },
@@ -1558,272 +1590,263 @@ return /******/ (function(modules) { // webpackBootstrap
 	 *
 	 **/
 
-	(function () {
+	'use strict';
 
-	    'use strict';
+	var _ss       = __webpack_require__(2),
+	    number    = __webpack_require__(4),
+	    _         = __webpack_require__(22),
+	    polyn     = __webpack_require__(14),
+	    gamma     = __webpack_require__(12),
+	    constant  = __webpack_require__(7),
+	    factorial = __webpack_require__(17);
 
-	    var _ss       = __webpack_require__(2),
-	        number    = __webpack_require__(4),
-	        _         = __webpack_require__(22),
-	        polyn     = __webpack_require__(14),
-	        gamma     = __webpack_require__(12),
-	        constant  = __webpack_require__(7),
-	        factorial = __webpack_require__(17);
-
-	    function _PD(lambda) {
-	        this.lambda = lambda;
-	    }
+	function _PD(lambda) {
+	    this.lambda = lambda;
+	}
 
 
-	    function _poisson (lambda) {
-	        return new _PD(lambda);
-	    }
-	    exports.poisson = _poisson;
+	function _poisson (lambda) {
+	    return new _PD(lambda);
+	}
+	exports.poisson = _poisson;
 
 
-	    function _cdf(distribution,x) {
-	        if( !(distribution instanceof _PD) ) {
-	            throw new Error(
-	                "statscript.distribution.poisson.cdf: " +
-	                "distribution parameter is not Poisson"
-	            );
+	function _cdf(distribution,x) {
+	    if( !(distribution instanceof _PD) ) {
+	        throw new Error(
+	            "statscript.distribution.poisson.cdf: " +
+	            "distribution parameter is not Poisson"
+	        );
+	    };
+
+	    // if @distribution is the only parameter
+	    // partially apply the cdf function to it
+	    if(_.isUndefined(x)) {
+	        return function (x) {
+	            if(x < 0) return 0;
+	            if(!isFinite(x)) return 1;
+	            if(isNaN(x)) throw new Error("statscript.distribution.poisson.cumulative: NaN input");
+	            return 1 - gamma.incompleteGamma((Math.floor(x) + 1), distribution.lambda);
 	        };
-
-	        // if @distribution is the only parameter
-	        // partially apply the cdf function to it
-	        if(_.isUndefined(x)) {
-	            return function (x) {
-	                if(x < 0) return 0;
-	                if(!isFinite(x)) return 1;
-	                if(isNaN(x)) throw new Error("statscript.distribution.poisson.cumulative: NaN input");
-	                return 1 - gamma.incompleteGamma((Math.floor(x) + 1), distribution.lambda);
-	            };
-	        }
-
-	        if(x < 0) return 0;
-	        if(!isFinite(x)) return 1;
-	        if(isNaN(x)) throw new Error("statscript.distribution.poisson.cumulative: NaN input");
-	        return 1 - gamma.incompleteGamma((Math.floor(x) + 1), distribution.lambda);
 	    }
-	    exports.cdf = _cdf;
+
+	    if(x < 0) return 0;
+	    if(!isFinite(x)) return 1;
+	    if(isNaN(x)) throw new Error("statscript.distribution.poisson.cumulative: NaN input");
+	    return 1 - gamma.incompleteGamma((Math.floor(x) + 1), distribution.lambda);
+	}
+	exports.cdf = _cdf;
 
 
-	    function _complCdf(distribution,x) {
-	        if( !(distribution instanceof _PD) ) {
-	            throw new Error(
-	                "statscript.distribution.poisson.complCdf: " +
-	                "distribution parameter is not Poisson"
-	            );
+	function _complCdf(distribution,x) {
+	    if( !(distribution instanceof _PD) ) {
+	        throw new Error(
+	            "statscript.distribution.poisson.complCdf: " +
+	            "distribution parameter is not Poisson"
+	        );
+	    };
+
+	    // if @distribution is the only parameter
+	    // partially apply the cdf function to it
+	    if(_.isUndefined(x)) {
+	        return function (x) {
+	            return 1 - _cdf(distribution, x);
 	        };
-
-	        // if @distribution is the only parameter
-	        // partially apply the cdf function to it
-	        if(_.isUndefined(x)) {
-	            return function (x) {
-	                return 1 - _cdf(distribution, x);
-	            };
-	        }
-
-	        return 1 - _cdf(distribution,x);
 	    }
-	    exports.complCdf = _complCdf;
+
+	    return 1 - _cdf(distribution,x);
+	}
+	exports.complCdf = _complCdf;
 
 
-	}).call(this);
 
 
 /***/ },
 /* 20 */
 /***/ function(module, exports, __webpack_require__) {
 
-	(function () {
+	
+	'use strict';
 
-	    'use strict';
-
-	    var T        = __webpack_require__(3),
-	        _ss      = __webpack_require__(2),
-	        _        = __webpack_require__(22),
-	        kbn      = __webpack_require__(9);
-
-
-	        function _kbn_sum (ls) {
-	            return kbn.sum( ls, kbn.unpack );
-	        }
+	var T        = __webpack_require__(3),
+	    _ss      = __webpack_require__(2),
+	    _        = __webpack_require__(22),
+	    kbn      = __webpack_require__(9);
 
 
-	        function _robustSumVar(m, ls) {
-	            return _kbn_sum( _.map( ls, function (n) {
-	                return Math.pow( n - m, 2 );
-	            } ) );
-	        }
+	function _kbn_sum (ls) {
+	    return kbn.sum( ls, kbn.unpack );
+	}
 
 
-	        function _range(sample) {
-	            return _.max(sample) - _.min(sample);
-	        }
-	        exports.range = _range;
+	function _robustSumVar(m, ls) {
+	    return _kbn_sum( _.map( ls, function (n) {
+	        return Math.pow( n - m, 2 );
+	    } ) );
+	}
 
 
-	        function _mean(sample) {
-	            return _kbn_sum(sample) / sample.length;
-	        }
-	        exports.mean = _mean;
+	function _range(sample) {
+	    return _.max(sample) - _.min(sample);
+	}
+	exports.range = _range;
 
 
-	        function _centralMoment(a,sample) {
-
-	            if(a < 0) throw new Error("statscript.sample.centralMoment: negative input");
-	            else if(a == 0) return 1;
-	            else if(a == 1) return 0;
-	            else {
-	                var m = _mean(sample);
-	                var go = function (x) {
-	                    return Math.pow(x - m,a);
-	                };
-
-	                return _kbn_sum( _.map( sample, go ) ) / sample.length;
-	            }
-	        }
-	        exports.centralMoment = _centralMoment;
+	function _mean(sample) {
+	    return _kbn_sum(sample) / sample.length;
+	}
+	exports.mean = _mean;
 
 
-	        function _centralMoments(a,b,sample) {
-	            var tuple = mk_tuple;
+	function _centralMoment(a,sample) {
 
-	            if(a < 2 || b < 2) {
-	                return new T.Tuple( _centralMoment( a, sample ), _centralMoment( b, sample ) );
-	            }
-	            else {
-	                var m = _mean( sample );
-	                var n = sample.length;
+	    if(a < 0) throw new Error("statscript.sample.centralMoment: negative input");
+	    else if(a == 0) return 1;
+	    else if(a == 1) return 0;
+	    else {
+	        var m = _mean(sample);
+	        var go = function (x) {
+	            return Math.pow(x - m,a);
+	        };
 
-	                var finish = function (tup) { return new T.Tuple( tup.fst / n, tup.snd / n ); };
-	                var go = function (tup, x) {
-	                    var d = x - m;
-	                    var one = tup.fst + Math.pow(d,a);
-	                    var two = tup.snd + Math.pow(d,b);
-	                    return new T.Tuple(one,two);
-	                };
-	                return finish( _ss.foldL( new T.Tuple(0,0), sample, go ) );
-	            }
-	        }
-	        exports.centralMoments = _centralMoments;
+	        return _kbn_sum( _.map( sample, go ) ) / sample.length;
+	    }
+	}
+	exports.centralMoment = _centralMoment;
 
 
-	        function _skewness(sample) {
-	            var cm = _centralMoments( 3, 2, sample );
-	            return cm.fst * Math.pow( cm.snd, - 1.5 );
-	        }
-	        exports.skewness = _skewness;
+	function _centralMoments(a,b,sample) {
+	    var tuple = mk_tuple;
+
+	    if(a < 2 || b < 2) {
+	        return new T.Tuple( _centralMoment( a, sample ), _centralMoment( b, sample ) );
+	    }
+	    else {
+	        var m = _mean( sample );
+	        var n = sample.length;
+
+	        var finish = function (tup) { return new T.Tuple( tup.fst / n, tup.snd / n ); };
+	        var go = function (tup, x) {
+	            var d = x - m;
+	            var one = tup.fst + Math.pow(d,a);
+	            var two = tup.snd + Math.pow(d,b);
+	            return new T.Tuple(one,two);
+	        };
+	        return finish( _ss.foldL( new T.Tuple(0,0), sample, go ) );
+	    }
+	}
+	exports.centralMoments = _centralMoments;
 
 
-	        function _kurtosis(sample) {
-	            var cm = _centralMoments( 4, 2, sample );
-	            return ( cm.fst / ( cm.snd * cm.snd ) ) - 3;
-	        }
-	        exports.kurtosis = _kurtosis;
+	function _skewness(sample) {
+	    var cm = _centralMoments( 3, 2, sample );
+	    return cm.fst * Math.pow( cm.snd, - 1.5 );
+	}
+	exports.skewness = _skewness;
 
 
-	        function _variance(sample) {
-	            var n = sample.length;
-
-	            if(n > 1) return _robustSumVar(_mean(sample), sample) / n;
-	            else return 0;
-	        }
-	        exports.variance = _variance;
+	function _kurtosis(sample) {
+	    var cm = _centralMoments( 4, 2, sample );
+	    return ( cm.fst / ( cm.snd * cm.snd ) ) - 3;
+	}
+	exports.kurtosis = _kurtosis;
 
 
-	        function _varianceUnbiased(sample) {
-	            var n = sample.length;
+	function _variance(sample) {
+	    var n = sample.length;
 
-	            if(n > 1) return _robustSumVar(_mean(sample), sample) / ( n - 1 );
-	            else return 0;
-	        }
-	        exports.varianceUnbiased = _varianceUnbiased;
-
-
-	        function _stdDev(sample) {
-	            return Math.sqrt(_varianceUnbiased( sample ));
-	        }
-	        exports.stdDev = _stdDev;
+	    if(n > 1) return _robustSumVar(_mean(sample), sample) / n;
+	    else return 0;
+	}
+	exports.variance = _variance;
 
 
-	}).call(this);
+	function _varianceUnbiased(sample) {
+	    var n = sample.length;
+
+	    if(n > 1) return _robustSumVar(_mean(sample), sample) / ( n - 1 );
+	    else return 0;
+	}
+	exports.varianceUnbiased = _varianceUnbiased;
+
+
+	function _stdDev(sample) {
+	    return Math.sqrt(_varianceUnbiased( sample ));
+	}
+	exports.stdDev = _stdDev;
+
+
+
 
 
 /***/ },
 /* 21 */
 /***/ function(module, exports, __webpack_require__) {
 
-	(function () {
+	
+	'use strict';
 
-	    'use strict';
-
-	    var T        = __webpack_require__(3),
-	        _ss      = __webpack_require__(2),
-	        _        = __webpack_require__(22),
-	        constant = __webpack_require__(7);
+	var T        = __webpack_require__(3),
+	    _ss      = __webpack_require__(2),
+	    _        = __webpack_require__(22),
+	    constant = __webpack_require__(7);
 
 
-	        function _histogramHelper (numberOfBins,lo,hi,sample) {
-	            return histogramBinHelper(numberOfBins, lo, hi, sample,
-	                _ss.replicate(numberOfBins, 0));
+	function _histogramHelper (numberOfBins,lo,hi,sample) {
+	    return histogramBinHelper(numberOfBins, lo, hi, sample,
+	        _ss.replicate(numberOfBins, 0));
+	}
+
+
+	function _histogramBinHelper(numberOfBins,lo,hi,xs,bins) {
+	    var len = xs.length,
+	        d = ( (hi - lo) * (1 + Number.EPSILON) ) / numberOfBins;
+
+	    var go = function (i) {
+	        if(i >= len) return bins;
+	        else {
+	            var x = xs[i], b = Math.trunc( (x - lo) / d );
+	            bins[b] = bins[b] + 1;
+	            return go(i+1);
 	        }
+	    };
+
+	    return go(0);
+	}
 
 
-	        function _histogramBinHelper(numberOfBins,lo,hi,xs,bins) {
-	            var len = xs.length,
-	                d = ( (hi - lo) * (1 + Number.EPSILON) ) / numberOfBins;
+	function _histogram(numberOfBins, sample) {
+	    var lohi = _range(numberOfBins, sample);
+	    var lo = lohi.lo, hi = lohi.hi;
+	    var d = (hi - lo) / numberOfBins;
+	    var step = function (i) { return lo + d * i; }
 
-	            var go = function (i) {
-	                if(i >= len) return bins;
-	                else {
-	                    var x = xs[i], b = Math.trunc( (x - lo) / d );
-	                    bins[b] = bins[b] + 1;
-	                    return go(i+1);
-	                }
-	            };
-
-	            return go(0);
-	        }
+	    return {
+	        bins: _ss.generate(numberOfBins,step),
+	        frequency: _histogramHelper(numberOfBins, lo, hi, sample)
+	    };
+	}
+	exports.histogram = _histogram;
 
 
-	        function _histogram(numberOfBins, sample) {
-	            var lohi = _range(numberOfBins, sample);
-	            var lo = lohi.lo, hi = lohi.hi;
-	            var d = (hi - lo) / numberOfBins;
-	            var step = function (i) { return lo + d * i; }
+	function _range(numberOfBins, sample) {
+	    if(numberOfBins < 1) throw new Error("statscript.sample.histogram.range: invalid bin count");
 
-	            return {
-	                bins: _ss.generate(numberOfBins,step),
-	                frequency: _histogramHelper(numberOfBins, lo, hi, sample)
-	            };
-	        }
-	        exports.histogram = _histogram;
+	    if(sample.length == 0) throw new Error("statscript.sample.histogram.range: empty sample");
 
+	    var lo = _.min(sample), hi = _.max(sample);
 
-	        function _range(numberOfBins, sample) {
-	            if(numberOfBins < 1) throw new Error("statscript.sample.histogram.range: invalid bin count");
-
-	            if(sample.length == 0) throw new Error("statscript.sample.histogram.range: empty sample");
-
-	            var lo = _.min(sample), hi = _.max(sample);
-
-	            if(lo === hi) {
-	                var a = Math.abs( lo ) / 10;
-	                if(a < constant.tiny) return { lo: -1, hi: 1 };
-	                else return { lo: lo - a, hi: lo + a };
-	            }
-	            else {
-	                var d = numberOfBins === 1 ? 0 : ( (hi - lo) / ( (numberOfBins - 1) * 2 ) );
-	                return { lo: lo - d, hi: hi + d };
-	            }
-	        }
-	        exports.range = _range;
-
-
-	}).call(this);
-
+	    if(lo === hi) {
+	        var a = Math.abs( lo ) / 10;
+	        if(a < constant.tiny) return { lo: -1, hi: 1 };
+	        else return { lo: lo - a, hi: lo + a };
+	    }
+	    else {
+	        var d = numberOfBins === 1 ? 0 : ( (hi - lo) / ( (numberOfBins - 1) * 2 ) );
+	        return { lo: lo - d, hi: hi + d };
+	    }
+	}
+	exports.range = _range;
 
 /***/ },
 /* 22 */
