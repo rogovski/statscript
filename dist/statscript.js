@@ -2,7 +2,7 @@
  * statscript.js
  *
  * @version 0.0.0
- * @date    2014-11-30
+ * @date    2014-12-01
  *
  * @license
  * Copyright (C) 2014 Michael Rogowski <michaeljrogowski@gmail.com>
@@ -129,6 +129,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	  ss.sample = {};
 	  ss.sample.collection = __webpack_require__(21);
 	  ss.sample.histogram = __webpack_require__(22);
+	  ss.sample.regression = __webpack_require__(23);
 
 	  // return the new instance
 	  return ss;
@@ -150,7 +151,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	'use strict';
 
-	var _ = __webpack_require__(23),
+	var _ = __webpack_require__(24),
 	    T = __webpack_require__(3);
 
 	//(a -> a -> a) -> [a] -> a
@@ -286,10 +287,51 @@ return /******/ (function(modules) { // webpackBootstrap
 	exports.enumFromStepN = _enumFromStepN;
 
 
+	/**
+	 * flatten an array of arrays
+	 **/
+	function _flatten (lls) {
+	    var accum = [];
+	    for (var i = 0; i < lls.length; i++) {
+	        for (var j = 0; j < lls[i].length; j++) {
+	            accum.push((lls[i])[j]);
+	        };
+	    };
+	    return accum;
+	}
+	exports.flatten = _flatten;
+
+
+	/**
+	 * a variation ECMAscript slice that uses length
+	 * instead of index to generate the subarray
+	 **/
 	function _slice1(ls,start,len) {
 	    return ls.slice(start, start+len);
 	}
 	exports.slice1 = _slice1;
+
+
+	function _for (start,end,fn) {
+	    for (var i = start; i < end; i++) fn(i);
+	}
+	exports.for = _for;
+
+
+	function _rfor (start,end,fn) {
+	    for (var i = start-1; i > end; i--) fn(i);
+	}
+	exports.rfor = _rfor;
+
+
+	function _imap (ls,fn) {
+	    var accum = [];
+	    for (var i = 0; i < ls.length; i++) {
+	        accum.push(fn(i,ls[i]));
+	    };
+	    return accum;
+	}
+	exports.imap = _imap;
 
 /***/ },
 /* 3 */
@@ -324,7 +366,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	'use strict';
 
 	var T        = __webpack_require__(3),
-	    _        = __webpack_require__(23);
+	    _        = __webpack_require__(24);
 
 
 	function _sign (x) {
@@ -412,6 +454,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	var T   = __webpack_require__(3),
 	    N   = __webpack_require__(4),
+	    _   = __webpack_require__(24),
 	    _ss = __webpack_require__(2);
 
 
@@ -422,12 +465,28 @@ return /******/ (function(modules) { // webpackBootstrap
 	    this.exponent   = exponent;
 	    this.data       = data;
 
+
+	    /**
+	     * get the value at location
+	     **/
 	    this.get = function (row,column) {
 	        return this.data[row * this.columns + column];
 	    };
 
-	    this.set = function (row,column,setter) {
 
+	    /**
+	     * adjust the value at location with a function,
+	     * or set it with a value.
+	     **/
+	    this.set = function (row,column,setter) {
+	        if(_.isFunction(setter)) {
+	            this.data[row * this.columns + column] =
+	                setter(this.data[row * this.columns + column]);
+	        }
+
+	        else {
+	            this.data[row * this.columns + column] = setter;
+	        }
 	    };
 
 	    this.log = function () {
@@ -440,29 +499,49 @@ return /******/ (function(modules) { // webpackBootstrap
 	            mat.push(row);
 	        };
 	        console.log(mat);
+	    };
+
+
+	    // note: shallow copy of array object
+	    this.clone = function () {
+	        return new _Matrix(this.rows, this.columns, this.exponent, this.data.slice(0));
 	    }
 	}
 	exports.Matrix = _Matrix;
 
 
+	/**
+	 * get a tuple of (number of rows, number of columns)
+	 **/
 	function _dimension () {
 	    return { rows: this.rows, columns: this.columns };
 	}
 	_Matrix.prototype.dimension = _dimension;
 
 
+	/**
+	 * get the column of the matrix at index i
+	 **/
 	function _column (i) {
 	    return _ss.backpermute( this.data, _ss.enumFromStepN(i, this.columns, this.rows) );
 	}
 	_Matrix.prototype.column = _column;
 
 
+	/**
+	 * get the row of the matrix at index i
+	 **/
 	function _row (i) {
 	    return _ss.slice1(this.data, this.columns*i, this.columns);
 	}
 	_Matrix.prototype.row = _row;
 
 
+	/**
+	 * matrix transpose that mutates the underlying matrix object
+	 * TODO: consider also adding an version that creates a new
+	 *       transposed matrix
+	 **/
 	function _transpose() {
 	    var newCols = this.rows,
 	        newRows = this.columns,
@@ -479,6 +558,113 @@ return /******/ (function(modules) { // webpackBootstrap
 	    return this;
 	}
 	_Matrix.prototype.transpose = _transpose;
+
+
+	/**
+	 * Calculate the Euclidean norm of a vector
+	 **/
+	function _norm(vector) {
+	    return Math.sqrt(_ss.sum(_.map(vector, function (x) {
+	        return x*x;
+	    })));
+	}
+	exports.norm = _norm;
+
+
+	/**
+	 * create a matrix where all entries are k
+	 **/
+	function _replicate(rows, columns, k) {
+	    return new _Matrix(rows, columns, 0, _ss.replicate(rows*columns, k));
+	}
+	exports.replicate = _replicate;
+
+
+	function _innerProduct(j, k) {
+	    return _ss.sum(_ss.zipWith(this.column(j), this.column(k), function (a,b) {
+	        return a * b;
+	    }));
+	}
+	_Matrix.prototype.innerProduct = _innerProduct;
+
+
+	/**
+	 * multiply a matrix by a vector
+	 **/
+	function _multiplyVector (matrix,vector) {
+
+	    if(matrix.columns != vector.length)
+	        throw new Error('statscript.matrix.multiplyVector: dim mismatch');
+
+	    return _ss.generate(matrix.rows, function (rw) {
+	        var r = matrix.row(rw);
+	        return _ss.sum(_ss.zipWith(vector, r, function (a,b) {
+	            return a * b;
+	        }));
+	    });
+	}
+	exports.multiplyVector = _multiplyVector;
+
+
+	/**
+	 * multiply a matrix by a matrix
+	 **/
+	function _multiplyMatrix (m1,m2) {
+	    var r1 = m1.rows, e1 = m1.exponent
+	        c2 = m2.columns, e2 = m2.exponent;
+
+	    var data = _ss.generate(r1*c2, function (t) {
+	        var qrem = N.quoteRem(t,c2),
+	            i    = qrem.fst,
+	            j    = qrem.snd;
+
+	        return _ss.sum(_ss.zipWith( m1.row(i), m2.column(j), function (a,b) {
+	            return a * b;
+	        }));
+	    });
+
+	    return new _Matrix(r1,c2,e1+e2,data);
+	}
+	exports.multiplyMatrix = _multiplyMatrix;
+
+
+	/**
+	 * QR decomposition, returns a tuple of Matrices
+	 **/
+	function _qrDecomposition (matrix) {
+	    var mat = matrix.clone(),
+	        m   = mat.rows,
+	        n   = mat.columns,
+	        r   = _replicate(n,n,0);
+
+	    _ss.for(0,n,function (j) {
+	        var cn = _norm(mat.column(j));
+	        r.set(j,j,cn);
+
+	        _ss.for(0,m, function (i) {
+	            mat.set(i,j, function (el) {
+	                return el / cn;
+	            });
+	        });
+
+	        _ss.for(j+1, n, function (jj) {
+	            var p = mat.innerProduct(j,jj);
+	            r.set(j,jj,p);
+
+	            _ss.for(0, m, function (i0) {
+	                var aij = mat.get(i0,j);
+	                mat.set(i0,jj,function (el0) {
+	                    return el0 - (p*aij);
+	                });
+	            });
+
+	        });
+
+	    });
+
+	    return new T.Tuple(mat,r);
+	}
+	exports.qrDecomposition = _qrDecomposition;
 
 
 /***/ },
@@ -520,7 +706,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	'use strict';
 
 	var _ss     = __webpack_require__(2),
-	    _       = __webpack_require__(23),
+	    _       = __webpack_require__(24),
 	    uniform = __webpack_require__(6),
 	    T       = __webpack_require__(3);
 
@@ -808,7 +994,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	'use strict';
 
 	var _ss     = __webpack_require__(2),
-	    _       = __webpack_require__(23),
+	    _       = __webpack_require__(24),
 	    error   = __webpack_require__(9);
 
 
@@ -886,7 +1072,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	var _ss      = __webpack_require__(2),
 	    T        = __webpack_require__(3),
-	    _        = __webpack_require__(23);
+	    _        = __webpack_require__(24);
 
 
 	function _chebyshev(x,coeffs) {
@@ -922,7 +1108,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	'use strict';
 
 	var _ss       = __webpack_require__(2),
-	    _         = __webpack_require__(23),
+	    _         = __webpack_require__(24),
 	    error     = __webpack_require__(9),
 	    constant  = __webpack_require__(8),
 	    chebyshev = __webpack_require__(12);
@@ -1221,7 +1407,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	'use strict';
 
 	var _ss      = __webpack_require__(2),
-	    _        = __webpack_require__(23);
+	    _        = __webpack_require__(24);
 
 
 	function _evaluatePolynomial(x,coeffs) {
@@ -1258,7 +1444,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	'use strict';
 
 	var _ss       = __webpack_require__(2),
-	    _         = __webpack_require__(23),
+	    _         = __webpack_require__(24),
 	    error     = __webpack_require__(9),
 	    constant  = __webpack_require__(8),
 	    gamma     = __webpack_require__(13),
@@ -1408,7 +1594,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	var _ss      = __webpack_require__(2),
 	    number   = __webpack_require__(4),
-	    _        = __webpack_require__(23),
+	    _        = __webpack_require__(24),
 	    polyn    = __webpack_require__(15),
 	    gamma    = __webpack_require__(13),
 	    constant = __webpack_require__(8);
@@ -1502,7 +1688,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	'use strict';
 
 	var _ss      = __webpack_require__(2),
-	    _        = __webpack_require__(23),
+	    _        = __webpack_require__(24),
 	    error    = __webpack_require__(9),
 	    constant = __webpack_require__(8);
 
@@ -1705,7 +1891,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	var _ss       = __webpack_require__(2),
 	    number    = __webpack_require__(4),
-	    _         = __webpack_require__(23),
+	    _         = __webpack_require__(24),
 	    polyn     = __webpack_require__(15),
 	    gamma     = __webpack_require__(13),
 	    constant  = __webpack_require__(8),
@@ -1781,7 +1967,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	var T        = __webpack_require__(3),
 	    _ss      = __webpack_require__(2),
-	    _        = __webpack_require__(23),
+	    _        = __webpack_require__(24),
 	    kbn      = __webpack_require__(10);
 
 
@@ -1899,7 +2085,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	var T        = __webpack_require__(3),
 	    _ss      = __webpack_require__(2),
-	    _        = __webpack_require__(23),
+	    _        = __webpack_require__(24),
 	    constant = __webpack_require__(8);
 
 
@@ -1961,6 +2147,122 @@ return /******/ (function(modules) { // webpackBootstrap
 
 /***/ },
 /* 23 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	var T   = __webpack_require__(3),
+	    N   = __webpack_require__(4),
+	    M   = __webpack_require__(5),
+	    _   = __webpack_require__(24),
+	    _ss = __webpack_require__(2),
+	    c   = __webpack_require__(21);
+
+
+	/**
+	 * Solve the equation @matrix x = @vector. where
+	 * @matrix is an upper-triangular square matrix
+	 * @vector is of the same length as rows\columns in @matrix
+	 **/
+	function _solve(matrix, vector) {
+	    if(matrix.rows != vector.length)
+	        throw new Error("row/vector mismatch");
+
+	    var s = vector.slice(0);
+
+	    _ss.rfor(matrix.rows, 0, function (i) {
+	        var si = s[i] / matrix.get(i,i);
+	        s[i] = si;
+
+	        _ss.for(0,i,function (j) {
+	            console.log('for');
+	            s[j] = s[j] - (matrix.get(j,i) * si);
+	        });
+	    });
+
+	    return s;
+	}
+
+
+	/**
+	 * Compute R^2, the coefficient of determination that
+	 * indicates goodness-of-fit of a regression.
+	 **/
+	function _rSquare(predictors, responders, coeff) {
+	    var p = function (i) {
+	            return _ss.sum(_ss.imap(coeff, function (j,x) {
+	                return x * predictors.get(i,j);
+	            }));
+	        },
+	        r = _ss.sum(_ss.imap(responders, function (i,x) {
+	            return Math.pow(x - p(i),2);
+	        })),
+	        t = _ss.sum(_.map(responders, function (x) {
+	            return Math.pow(x - c.mean(responders),2);
+	        }));
+
+	    return 1 - r / t;
+	}
+
+
+	/**
+	 * Compute the ordinary least-squares solution to @matrix x = @vector
+	 **/
+	function _ols(matrix,vector) {
+	    var rs    = matrix.rows,
+	        cs    = matrix.columns,
+	        qrres = M.qrDecomposition(matrix),
+	        q     = qrres.fst,
+	        r     = qrres.snd;
+
+	    if(rs < cs) throw new Error("fewer rows than columns");
+
+	    q.transpose();
+
+	    return _solve(r,M.multiplyVector(q,vector));
+	}
+
+
+	/**
+	 * @predictors: Non-empty list of predictor vectors.  Must all have
+	 * the same length.  These will become the columns of
+	 * the matrix @matrix solved by 'ols'.
+	 *
+	 * @responders: Responder vector.  Must have the same length as the
+	 * predictor vectors.
+	 *
+	 * returns coefficients and r^2
+	 **/
+	function _olsRegress(predictors, responders) {
+	    var lss     = _.map(predictors, function (pls) { return pls.length; }),
+	        n       = _.first(lss),
+	        ls      = _.rest(lss);
+
+	    // TODO: check if predictors is a list of lists,
+	    //       and is non-empty
+
+	    if(_.some(ls, function (l) {return l != n;}))
+	        throw new Error("predictor vector length mismatch");
+
+	    if(responders.length != n)
+	        throw new Error("responder predictor length mismatch");
+
+	    var mxdata  = _ss.flatten(predictors.concat([_ss.replicate(n,1)])),
+	        mxpreds = new M.Matrix(lss.length + 1, n, 0, mxdata);
+
+	    mxpreds.transpose();
+
+	    var coeffs = _ols(mxpreds,responders);
+	    console.log('wtf');
+	    return new T.Tuple(coeffs, _rSquare(mxpreds,responders,coeffs));
+
+	}
+	exports.olsRegress = _olsRegress;
+
+	// var r = statscript.sample.regression; r.olsRegress([[1,2,3,4,5]], [2,4,6,8,10]);
+
+/***/ },
+/* 24 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;//     Underscore.js 1.7.0
