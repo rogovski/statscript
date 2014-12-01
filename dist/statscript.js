@@ -2253,7 +2253,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	    mxpreds.transpose();
 
 	    var coeffs = _ols(mxpreds,responders);
-	    console.log('wtf');
 	    return new T.Tuple(coeffs, _rSquare(mxpreds,responders,coeffs));
 
 	}
