@@ -2,7 +2,7 @@
  * statscript.js
  *
  * @version 0.0.0
- * @date    2014-12-01
+ * @date    2014-12-02
  *
  * @license
  * Copyright (C) 2014 Michael Rogowski <michaeljrogowski@gmail.com>
@@ -319,7 +319,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 	function _rfor (start,end,fn) {
-	    for (var i = start-1; i > end; i--) fn(i);
+	    for (var i = start-1; i >= end; i--) fn(i);
 	}
 	exports.rfor = _rfor;
 
@@ -981,6 +981,12 @@ return /******/ (function(modules) { // webpackBootstrap
 	    return obj.sum + obj.c;
 	}
 	exports.unpack = _unpack;
+
+
+	function _sumReturn(ls) {
+	    return _sum(ls, _unpack);
+	}
+	exports.sumReturn = _sumReturn;
 
 
 
@@ -2175,14 +2181,30 @@ return /******/ (function(modules) { // webpackBootstrap
 	        s[i] = si;
 
 	        _ss.for(0,i,function (j) {
-	            console.log('for');
 	            s[j] = s[j] - (matrix.get(j,i) * si);
 	        });
 	    });
 
 	    return s;
 	}
-
+	// there's probably a bug in my solve function
+	// | Solve the equation /R x = b/.
+	/*
+	solve :: Matrix     -- ^ /R/ is an upper-triangular square matrix.
+	      -> Vector     -- ^ /b/ is of the same length as rows\/columns in /R/.
+	      -> Vector
+	solve r b
+	  | n /= l    = error $ "row vector mismatch " ++ show (n,l)
+	  | otherwise = U.create $ do
+	  s <- U.thaw b
+	  rfor n 0 $ \i -> do
+	    si <- ( \ unsafeIndex r i i) <$> M.unsafeRead s i
+	    M.unsafeWrite s i si
+	    for 0 i $ \j -> F.unsafeModify s j $ subtract ((unsafeIndex r j i) * si)
+	  return s
+	  where n = rows r
+	        l = U.length b
+	*/
 
 	/**
 	 * Compute R^2, the coefficient of determination that
@@ -2203,6 +2225,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	    return 1 - r / t;
 	}
+	exports.rSquare = _rSquare;
 
 
 	/**
@@ -2219,8 +2242,10 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	    q.transpose();
 
+	    console.log(_solve(r,M.multiplyVector(q,vector)));
 	    return _solve(r,M.multiplyVector(q,vector));
 	}
+	exports.ols = _ols;
 
 
 	/**
